@@ -517,6 +517,7 @@ export default function App() {
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
         onImport={handleBulkImport}
+        defaultExamTitle={instituteInfo.examTitle}
       />
 
       {/* Batch Print All Modal */}

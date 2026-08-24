@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Phone, Mail, Hash, MapPin, BookOpen, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { extractSeatNoFromPhone } from '../utils/csvHelper';
 
 export default function CandidateModal({ isOpen, onClose, onSave, candidate = null }) {
   const [formData, setFormData] = useState({
@@ -26,23 +27,34 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
         uniqueCode: candidate.uniqueCode || ''
       });
     } else {
-      // Auto-generate random default roll number and unique ID
-      const randomSeat = `${Math.floor(1250000 + Math.random() * 9999)}`;
-      const randomUid = `CM-MPSC-${Math.floor(1000000 + Math.random() * 9000000)}`;
       setFormData({
         name: '',
         phone: '',
         email: '',
         examTitle: 'गट क - पूर्व परीक्षा 2026',
-        seatNo: randomSeat,
+        seatNo: '',
         examCentre: '(11-12) - Ramanbaug, New English School, Pune',
         photoUrl: '',
-        uniqueCode: randomUid
+        uniqueCode: ''
       });
     }
   }, [candidate, isOpen]);
 
   if (!isOpen) return null;
+
+  const handlePhoneChange = (e) => {
+    const val = e.target.value;
+    const cleanDigits = val.replace(/\D/g, '');
+    const autoSeat = cleanDigits.length >= 7 ? cleanDigits.slice(-7) : cleanDigits;
+
+    setFormData(prev => ({
+      ...prev,
+      phone: val,
+      // If adding new candidate and seatNo matches previous auto-generated, auto-update seatNo
+      seatNo: (!candidate || !prev.seatNo || prev.seatNo.length <= 7) && autoSeat ? autoSeat : prev.seatNo,
+      uniqueCode: `CM-MPSC-${autoSeat || Math.floor(1000000 + Math.random() * 9000000)}`
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -51,10 +63,14 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
       return;
     }
 
+    const finalSeatNo = formData.seatNo.trim() || extractSeatNoFromPhone(formData.phone, 1);
+    const finalUniqueCode = formData.uniqueCode || `CM-MPSC-${finalSeatNo}`;
+
     const payload = {
       ...formData,
+      seatNo: finalSeatNo,
+      uniqueCode: finalUniqueCode,
       id: candidate?.id || `CM-2026-${Date.now()}`,
-      uniqueCode: formData.uniqueCode || `CM-MPSC-${Math.floor(1000000 + Math.random() * 9000000)}`,
       photoUrl: formData.photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(formData.name)}`,
       attendanceStatus: candidate?.attendanceStatus || "Not Marked",
       verifiedAt: candidate?.verifiedAt || null
@@ -77,11 +93,11 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-100">
+      <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-100">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-800/50">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
               <User className="w-5 h-5" />
             </div>
             <div>
@@ -89,23 +105,23 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
                 {candidate ? 'Edit Candidate Details' : 'Add New Candidate'}
               </h3>
               <p className="text-xs text-slate-400">
-                Details will be embedded in Admit Card & QR Code
+                Seat number defaults to last 7 digits of mobile number
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+            className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
           {/* Candidate Name */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-blue-400" />
               Candidate Full Name *
             </label>
@@ -115,14 +131,14 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
               placeholder="e.g. Rushikesh Pawar"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm"
+              className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
             />
           </div>
 
           {/* Mobile & Email in 2 columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5 text-emerald-400" />
                 Mobile Number *
               </label>
@@ -131,15 +147,15 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
                 required
                 placeholder="e.g. 7499696080"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono"
+                onChange={handlePhoneChange}
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5 text-purple-400" />
-                Email Address *
+                Email / Gmail Address *
               </label>
               <input
                 type="email"
@@ -147,7 +163,7 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
                 placeholder="e.g. student@gmail.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
               />
             </div>
           </div>
@@ -155,72 +171,72 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
           {/* Exam Title & Seat No */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                Exam Title
+                Exam Title (Given by Admin)
               </label>
               <input
                 type="text"
                 value={formData.examTitle}
                 onChange={(e) => setFormData({ ...formData, examTitle: e.target.value })}
                 placeholder="e.g. गट क - पूर्व परीक्षा 2026"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <Hash className="w-3.5 h-3.5 text-sky-400" />
-                Seat / Roll Number
+                Seat No (Last 7 Digits of Mobile)
               </label>
               <input
                 type="text"
                 value={formData.seatNo}
                 onChange={(e) => setFormData({ ...formData, seatNo: e.target.value })}
-                placeholder="e.g. 1250042"
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm font-mono font-bold"
+                placeholder="e.g. 4996960"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs font-mono font-bold text-blue-400"
               />
             </div>
           </div>
 
           {/* Exam Centre */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-rose-400" />
-              Exam Centre
+              Assigned Exam Centre
             </label>
             <input
               type="text"
               value={formData.examCentre}
               onChange={(e) => setFormData({ ...formData, examCentre: e.target.value })}
               placeholder="e.g. (11-12) - Ramanbaug, New English School, Pune"
-              className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm"
+              className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
             />
           </div>
 
           {/* Photo URL or Upload */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
               Candidate Photo
             </label>
             <div className="flex gap-3 items-center">
-              <div className="w-16 h-20 rounded-lg border border-slate-700 bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+              <div className="w-14 h-16 rounded-xl border border-slate-700 bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
                 {formData.photoUrl ? (
                   <img src={formData.photoUrl} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-7 h-7 text-slate-500" />
+                  <User className="w-6 h-6 text-slate-500" />
                 )}
               </div>
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-1.5">
                 <input
                   type="text"
-                  placeholder="Paste Image URL or choose file below"
+                  placeholder="Paste Image URL or upload below"
                   value={formData.photoUrl}
                   onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
                   className="w-full px-3 py-1.5 rounded-lg glass-input text-xs"
                 />
-                <label className="inline-block cursor-pointer px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-medium text-slate-200 transition">
+                <label className="inline-block cursor-pointer px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-[11px] font-medium text-slate-200 transition">
                   Upload Photo File
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                 </label>
@@ -236,7 +252,12 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
               </span>
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, uniqueCode: `CM-MPSC-${Math.floor(1000000 + Math.random() * 9000000)}` }))}
+                onClick={() =>
+                  setFormData(prev => ({
+                    ...prev,
+                    uniqueCode: `CM-MPSC-${prev.seatNo || Math.floor(1000000 + Math.random() * 9000000)}`
+                  }))
+                }
                 className="text-[11px] text-blue-400 hover:underline"
               >
                 Regenerate
@@ -251,17 +272,17 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
             >
               {candidate ? 'Update Candidate' : 'Add Candidate'}
             </button>

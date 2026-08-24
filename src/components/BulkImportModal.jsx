@@ -1,8 +1,34 @@
 import React, { useState } from 'react';
-import { X, UploadCloud, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Users } from 'lucide-react';
-import { parseCandidateCsv, downloadSampleCsvTemplate } from '../utils/csvHelper';
+import {
+  X,
+  UploadCloud,
+  FileSpreadsheet,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  Users,
+  Building2,
+  BookOpen,
+  Hash,
+  Sparkles
+} from 'lucide-react';
+import { parseCandidateCsv, downloadSampleCsvTemplate, extractSeatNoFromPhone } from '../utils/csvHelper';
 
-export default function BulkImportModal({ isOpen, onClose, onImport }) {
+const PRESET_EXAM_CENTRES = [
+  "(11-12) - Ramanbaug, New English School, Pune",
+  "(08-04) - Modern High School & Junior College, Shivaji Nagar, Pune",
+  "(05-02) - Fergusson College Campus, F.C. Road, Pune",
+  "(03-01) - Mahatma Phule Krishi Vidyapeeth, Rahuri",
+  "(09-14) - Dr. Babasaheb Ambedkar Marathwada University Centre, Chhatrapati Sambhajinagar",
+  "(01-05) - Rayat Shikshan Sanstha Centre, Satara",
+  "Custom / Type Manual Centre Name..."
+];
+
+export default function BulkImportModal({ isOpen, onClose, onImport, defaultExamTitle = "गट क - पूर्व परीक्षा 2026" }) {
+  const [adminExamTitle, setAdminExamTitle] = useState(defaultExamTitle);
+  const [selectedCentrePreset, setSelectedCentrePreset] = useState(PRESET_EXAM_CENTRES[0]);
+  const [customCentreText, setCustomCentreText] = useState("");
+  const [uploadedFile, setUploadedFile] = useState(null);
   const [parsedData, setParsedData] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -10,13 +36,19 @@ export default function BulkImportModal({ isOpen, onClose, onImport }) {
 
   if (!isOpen) return null;
 
+  const currentExamCentre =
+    selectedCentrePreset === "Custom / Type Manual Centre Name..."
+      ? customCentreText || "Official Examination Centre"
+      : selectedCentrePreset;
+
   const handleFileUpload = async (file) => {
     if (!file) return;
+    setUploadedFile(file);
     setIsProcessing(true);
     setErrorMsg('');
 
     try {
-      const candidates = await parseCandidateCsv(file);
+      const candidates = await parseCandidateCsv(file, adminExamTitle, currentExamCentre);
       if (candidates.length === 0) {
         setErrorMsg('No candidate records found in the uploaded file.');
       } else {
@@ -29,64 +61,165 @@ export default function BulkImportModal({ isOpen, onClose, onImport }) {
     }
   };
 
+  // Re-apply admin exam title and centre if changed after upload
+  const handleUpdateAdminBatchSettings = (newExamTitle, newExamCentre) => {
+    if (parsedData.length > 0) {
+      const updated = parsedData.map(c => ({
+        ...c,
+        examTitle: newExamTitle,
+        examCentre: newExamCentre
+      }));
+      setParsedData(updated);
+    }
+  };
+
   const handleConfirmImport = () => {
     if (parsedData.length > 0) {
-      onImport(parsedData);
+      // Ensure all candidates have the latest chosen exam title & centre
+      const finalized = parsedData.map(c => ({
+        ...c,
+        examTitle: adminExamTitle,
+        examCentre: currentExamCentre
+      }));
+      onImport(finalized);
       setParsedData([]);
+      setUploadedFile(null);
       onClose();
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[85vh]">
+      <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-800/40">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+            <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-lg text-white">
-                Bulk Import Candidates (CSV / Excel)
+                Bulk CSV Import (3-Column Simple Format)
               </h3>
               <p className="text-xs text-slate-400">
-                Upload student records with Name, Mobile, Email, Seat No, and Center
+                Upload student records with only <strong>Name, Phone & Email</strong>. Admin chooses Exam Title & Centre.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+            className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {/* Download Sample Template Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-950/50 to-indigo-950/50 border border-blue-800/40">
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+          {/* Admin Batch Configuration Section */}
+          <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4">
+            <div className="flex items-center gap-2 text-white font-bold text-sm">
+              <Building2 className="w-4 h-4 text-blue-400" />
+              Admin Batch Settings (Applied to All Students in this CSV)
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Exam Title */}
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                  Examination Title (Given by Admin)
+                </label>
+                <input
+                  type="text"
+                  value={adminExamTitle}
+                  onChange={(e) => {
+                    setAdminExamTitle(e.target.value);
+                    handleUpdateAdminBatchSettings(e.target.value, currentExamCentre);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
+                  placeholder="e.g. गट क - पूर्व परीक्षा 2026"
+                />
+              </div>
+
+              {/* Exam Centre Selection */}
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Assigned Exam Centre (Selected by Admin)
+                </label>
+                <select
+                  value={selectedCentrePreset}
+                  onChange={(e) => {
+                    setSelectedCentrePreset(e.target.value);
+                    const newCentre = e.target.value === "Custom / Type Manual Centre Name..." ? customCentreText : e.target.value;
+                    handleUpdateAdminBatchSettings(adminExamTitle, newCentre);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs bg-slate-900"
+                >
+                  {PRESET_EXAM_CENTRES.map((centre, idx) => (
+                    <option key={idx} value={centre}>
+                      {centre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Custom Centre Text Input if selected */}
+              {selectedCentrePreset === "Custom / Type Manual Centre Name..." && (
+                <div className="md:col-span-2">
+                  <label className="block font-semibold text-emerald-300 mb-1">
+                    Enter Custom Exam Centre Name & Address:
+                  </label>
+                  <input
+                    type="text"
+                    value={customCentreText}
+                    onChange={(e) => {
+                      setCustomCentreText(e.target.value);
+                      handleUpdateAdminBatchSettings(adminExamTitle, e.target.value);
+                    }}
+                    placeholder="e.g. (02-08) - Government Polytechnic Hall, Shivaji Nagar, Pune"
+                    className="w-full px-3.5 py-2 rounded-xl glass-input text-xs border-emerald-500/50"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Smart Seat No Rule Notification */}
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px]">
+              <Hash className="w-4 h-4 text-blue-400 shrink-0" />
+              <span>
+                <strong>Smart Seat Number:</strong> The system automatically assigns each student's <strong>Seat Number as the last 7 digits of their phone number</strong> (e.g. <code>+91 9874996960</code> ➔ Seat No: <code>4996960</code>).
+              </span>
+            </div>
+          </div>
+
+          {/* Download Sample 3-Column Template Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-indigo-950/40 border border-blue-800/30">
             <div>
-              <h4 className="text-sm font-semibold text-blue-200">
-                Need the standard import format?
+              <h4 className="text-xs font-bold text-blue-200 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                Simple 3-Column CSV Template
               </h4>
-              <p className="text-xs text-blue-300/80 mt-0.5">
-                Download our pre-formatted CSV template with candidate columns.
+              <p className="text-slate-400 text-[11px] mt-0.5">
+                CSV only needs 3 columns: <code>Candidate Name</code>, <code>Mobile Number</code>, and <code>Email</code>.
               </p>
             </div>
             <button
               onClick={downloadSampleCsvTemplate}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-semibold transition shrink-0"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-semibold transition shrink-0"
             >
-              <Download className="w-4 h-4" />
-              Download Sample CSV
+              <Download className="w-3.5 h-3.5" />
+              Download 3-Column CSV Template
             </button>
           </div>
 
           {/* Upload Dropzone */}
           {parsedData.length === 0 ? (
             <div
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={(e) => {
                 e.preventDefault();
@@ -112,13 +245,11 @@ export default function BulkImportModal({ isOpen, onClose, onImport }) {
                 <div className="w-16 h-16 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3 group-hover:scale-110 transition">
                   <UploadCloud className="w-8 h-8" />
                 </div>
-                <h4 className="text-base font-semibold text-white">
-                  Click to upload or drag & drop CSV file
-                </h4>
-                <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                  Supports .CSV files exported from Google Sheets, Microsoft Excel, or your CRM.
+                <h4 className="text-sm font-bold text-white">Click to upload or drag & drop CSV file</h4>
+                <p className="text-slate-400 mt-1 max-w-sm text-xs">
+                  Upload candidate sheet with <code>Name</code>, <code>Mobile Number</code>, and <code>Email / Gmail</code>.
                 </p>
-                <span className="mt-4 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition">
+                <span className="mt-4 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">
                   Select CSV File
                 </span>
               </label>
@@ -127,26 +258,29 @@ export default function BulkImportModal({ isOpen, onClose, onImport }) {
             /* Parsed Preview Table */
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
                   <CheckCircle2 className="w-4 h-4" />
                   Successfully parsed {parsedData.length} candidate records
                 </div>
                 <button
-                  onClick={() => setParsedData([])}
+                  onClick={() => {
+                    setParsedData([]);
+                    setUploadedFile(null);
+                  }}
                   className="text-xs text-slate-400 hover:text-rose-400 transition"
                 >
                   Clear & re-upload
                 </button>
               </div>
 
-              <div className="border border-slate-800 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+              <div className="border border-slate-800 rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-800 text-slate-300 sticky top-0">
+                  <thead className="bg-slate-800/90 text-slate-300 sticky top-0">
                     <tr>
-                      <th className="p-2.5">Name</th>
-                      <th className="p-2.5">Mobile</th>
-                      <th className="p-2.5">Email</th>
-                      <th className="p-2.5">Seat No</th>
+                      <th className="p-2.5">Candidate Name</th>
+                      <th className="p-2.5">Phone Number</th>
+                      <th className="p-2.5">Email / Gmail</th>
+                      <th className="p-2.5 text-blue-400">Seat No (Last 7 Digits)</th>
                       <th className="p-2.5">Exam Centre</th>
                     </tr>
                   </thead>
@@ -156,8 +290,10 @@ export default function BulkImportModal({ isOpen, onClose, onImport }) {
                         <td className="p-2.5 font-medium text-white">{c.name}</td>
                         <td className="p-2.5 font-mono text-slate-300">{c.phone}</td>
                         <td className="p-2.5 text-slate-300">{c.email}</td>
-                        <td className="p-2.5 font-mono font-bold text-blue-400">{c.seatNo}</td>
-                        <td className="p-2.5 text-slate-400 truncate max-w-[150px]">{c.examCentre}</td>
+                        <td className="p-2.5 font-mono font-bold text-blue-400 bg-blue-500/5">
+                          {c.seatNo}
+                        </td>
+                        <td className="p-2.5 text-slate-400 truncate max-w-[180px]">{c.examCentre}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -178,19 +314,25 @@ export default function BulkImportModal({ isOpen, onClose, onImport }) {
         {/* Footer actions */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-800/30">
           <div className="text-xs text-slate-400">
-            {parsedData.length > 0 ? `Ready to import ${parsedData.length} students` : 'Supported columns: Name, Mobile, Email, Seat No, Centre'}
+            {parsedData.length > 0 ? (
+              <span className="text-emerald-400 font-semibold">
+                ✓ Ready to import {parsedData.length} candidates with auto-generated 7-digit seat numbers!
+              </span>
+            ) : (
+              'CSV format: Name, Mobile Number, Email'
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
             >
               Cancel
             </button>
             <button
               disabled={parsedData.length === 0}
               onClick={handleConfirmImport}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
             >
               <Users className="w-4 h-4" />
               Import {parsedData.length > 0 ? `${parsedData.length} Candidates` : 'Candidates'}
