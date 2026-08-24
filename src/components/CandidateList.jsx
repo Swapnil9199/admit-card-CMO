@@ -295,23 +295,19 @@ export default function CandidateList({
                         </button>
                       </td>
 
-                      {/* Candidate Name & Avatar (Clickable to open Hall Ticket Preview) */}
+                      {/* Candidate Name & Avatar */}
                       <td className="p-3.5">
-                        <div
-                          onClick={() => onSelectCandidate(c)}
-                          className="flex items-center gap-3 cursor-pointer group/name"
-                          title="Click to view Admit Card Preview"
-                        >
+                        <div className="flex items-center gap-3">
                           <img
                             src={
                               c.photoUrl ||
                               `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(c.name)}`
                             }
                             alt={c.name}
-                            className="w-9 h-9 rounded-xl object-cover border border-slate-700 shrink-0 group-hover/name:border-blue-500 transition"
+                            className="w-9 h-9 rounded-xl object-cover border border-slate-700 shrink-0"
                           />
                           <div>
-                            <div className="font-bold text-white group-hover/name:text-blue-400 group-hover/name:underline transition flex items-center gap-1.5">
+                            <div className="font-bold text-white group-hover:text-blue-400 transition flex items-center gap-1.5">
                               {c.name}
                             </div>
                             <div className="text-[11px] text-slate-400">
@@ -384,6 +380,15 @@ export default function CandidateList({
                       {/* Admit Card Actions */}
                       <td className="p-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Live Preview */}
+                          <button
+                            onClick={() => onSelectCandidate(c)}
+                            className="p-1.5 rounded-lg hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 transition"
+                            title="View Hall Ticket"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
                           {/* Email Admit Card */}
                           <button
                             disabled={emailingId === c.id}
@@ -392,15 +397,6 @@ export default function CandidateList({
                             title={`Email Admit Card to ${c.email || 'student'}`}
                           >
                             <Mail className="w-4 h-4" />
-                          </button>
-
-                          {/* Download 2-Page Hall Ticket PDF */}
-                          <button
-                            onClick={() => onDownloadPdf(c)}
-                            className="p-1.5 rounded-lg hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 transition"
-                            title="Download 2-Page Hall Ticket PDF"
-                          >
-                            <Download className="w-4 h-4" />
                           </button>
 
                           {/* Edit Candidate */}
