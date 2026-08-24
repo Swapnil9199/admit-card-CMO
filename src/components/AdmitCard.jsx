@@ -105,17 +105,17 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
                   </tr>
                   <tr className="border-b border-slate-900">
                     <td className="bg-slate-100/90 font-bold p-2 text-slate-900 border-r border-slate-900">
-                      Mobile Number:
+                      Contact / Mobile No:
                     </td>
-                    <td className="p-2 font-semibold text-slate-900 font-mono">
+                    <td className="p-2 font-bold text-slate-950 font-mono text-xs">
                       {candidate.phone || "N/A"}
                     </td>
                   </tr>
                   <tr className="border-b border-slate-900">
                     <td className="bg-slate-100/90 font-bold p-2 text-slate-900 border-r border-slate-900">
-                      Email Address:
+                      Candidate Email ID:
                     </td>
-                    <td className="p-2 font-semibold text-slate-900">
+                    <td className="p-2 font-semibold text-slate-900 text-xs">
                       {candidate.email || "N/A"}
                     </td>
                   </tr>

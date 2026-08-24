@@ -201,6 +201,18 @@ export default function App() {
     }
   };
 
+  const handleDeleteMultipleCandidates = (idsToDelete) => {
+    if (!idsToDelete || idsToDelete.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${idsToDelete.length} selected candidate(s)?`)) {
+      const remaining = candidates.filter(c => !idsToDelete.includes(c.id));
+      setCandidates(remaining);
+      if (idsToDelete.includes(selectedCandidateId)) {
+        setSelectedCandidateId(remaining[0]?.id || null);
+      }
+      showToast('success', `Successfully deleted ${idsToDelete.length} candidate(s).`);
+    }
+  };
+
   const handleBulkImport = (importedList) => {
     setCandidates([...importedList, ...candidates]);
     setSelectedCandidateId(importedList[0]?.id || selectedCandidateId);
@@ -444,6 +456,7 @@ export default function App() {
               setIsAddModalOpen(true);
             }}
             onDeleteCandidate={handleDeleteCandidate}
+            onDeleteMultipleCandidates={handleDeleteMultipleCandidates}
             onOpenBulkImport={() => setIsBulkImportOpen(true)}
             onDownloadPdf={(c) => {
               setSelectedCandidateId(c.id);
