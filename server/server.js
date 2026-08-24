@@ -326,7 +326,6 @@ app.post('/api/send-admit-card-email', async (req, res) => {
       messageId: info.messageId,
       previewUrl: previewUrl || null
     });
-  } catch (error) {
     console.error("[Email Error]:", error);
     return res.status(200).json({
       success: false,
@@ -336,6 +335,18 @@ app.post('/api/send-admit-card-email', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Email Service Backend running on http://localhost:${PORT}`);
+// Serve production static assets from Vite build (for Render deployment)
+const distPath = path.join(__dirname, '../dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Email Service Backend running on port ${PORT}`);
 });

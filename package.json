@@ -8,6 +8,7 @@
     "server": "node server/server.js",
     "client": "vite",
     "build": "vite build",
+    "start": "node server/server.js",
     "preview": "vite preview"
   },
   "dependencies": {
