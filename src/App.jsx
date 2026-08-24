@@ -176,19 +176,23 @@ export default function App() {
   };
 
   // Candidate Operations
-  const handleSaveCandidate = async (candidateData) => {
+  const handleSaveCandidate = async (candidateData, sendEmail = false) => {
     let updatedCandidates;
     if (editingCandidate) {
       updatedCandidates = candidates.map(c => (c.id === candidateData.id ? candidateData : c));
+      showToast('success', `Candidate "${candidateData.name}" updated successfully.`);
     } else {
       updatedCandidates = [candidateData, ...candidates];
+      showToast('success', `Candidate "${candidateData.name}" added successfully.`);
     }
 
     setCandidates(updatedCandidates);
     setSelectedCandidateId(candidateData.id);
 
-    // Automatically email the generated admit card to the user
-    dispatchAdmitCardEmail(candidateData);
+    // ONLY send email if Admin explicitly checked the sendEmail permission checkbox
+    if (sendEmail) {
+      dispatchAdmitCardEmail(candidateData);
+    }
   };
 
   const handleDeleteCandidate = (id) => {

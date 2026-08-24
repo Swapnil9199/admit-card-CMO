@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, Hash, MapPin, BookOpen, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { X, User, Phone, Mail, Hash, MapPin, BookOpen, Image as ImageIcon, Sparkles, Send } from 'lucide-react';
 import { extractSeatNoFromPhone } from '../utils/csvHelper';
 
 export default function CandidateModal({ isOpen, onClose, onSave, candidate = null }) {
@@ -13,8 +13,10 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
     photoUrl: '',
     uniqueCode: ''
   });
+  const [sendEmailNow, setSendEmailNow] = useState(false);
 
   useEffect(() => {
+    setSendEmailNow(false);
     if (candidate) {
       setFormData({
         name: candidate.name || '',
@@ -50,7 +52,6 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
     setFormData(prev => ({
       ...prev,
       phone: val,
-      // If adding new candidate and seatNo matches previous auto-generated, auto-update seatNo
       seatNo: (!candidate || !prev.seatNo || prev.seatNo.length <= 7) && autoSeat ? autoSeat : prev.seatNo,
       uniqueCode: `CM-MPSC-${autoSeat || Math.floor(1000000 + Math.random() * 9000000)}`
     }));
@@ -76,7 +77,8 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
       verifiedAt: candidate?.verifiedAt || null
     };
 
-    onSave(payload);
+    // Pass payload and explicit admin permission flag
+    onSave(payload, sendEmailNow);
     onClose();
   };
 
@@ -269,6 +271,20 @@ export default function CandidateModal({ isOpen, onClose, onSave, candidate = nu
               onChange={(e) => setFormData({ ...formData, uniqueCode: e.target.value })}
               className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-blue-700/50 text-xs font-mono font-bold text-blue-300"
             />
+          </div>
+
+          {/* Optional Send Email Permission Checkbox (Unchecked by default) */}
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+            <input
+              type="checkbox"
+              id="send-email-permission-checkbox"
+              checked={sendEmailNow}
+              onChange={(e) => setSendEmailNow(e.target.checked)}
+              className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 cursor-pointer accent-blue-600"
+            />
+            <label htmlFor="send-email-permission-checkbox" className="text-xs text-slate-300 cursor-pointer select-none">
+              Also email Hall Ticket PDF to candidate's email upon saving
+            </label>
           </div>
 
           {/* Actions */}
