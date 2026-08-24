@@ -326,6 +326,7 @@ app.post('/api/send-admit-card-email', async (req, res) => {
       messageId: info.messageId,
       previewUrl: previewUrl || null
     });
+  } catch (error) {
     console.error("[Email Error]:", error);
     return res.status(200).json({
       success: false,
@@ -339,7 +340,7 @@ app.post('/api/send-admit-card-email', async (req, res) => {
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
     }
