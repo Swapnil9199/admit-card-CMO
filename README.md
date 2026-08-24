@@ -49,3 +49,4 @@ If the camera is not opening or permission was previously denied:
 When using Gmail:
 - Port: `587` with **STARTTLS** (do NOT check SSL for 587) or Port `465` with **SSL**.
 - Password: Must be a **16-character Google App Password** generated at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) with 2-Step Verification turned ON.
+# admit-card-CMO
