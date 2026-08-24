@@ -250,9 +250,22 @@ export default function TemplateCustomizer({
               </label>
               <input
                 type="text"
-                value={instituteInfo.examTitle}
+                value={instituteInfo.examTitle || ""}
                 onChange={(e) => setInstituteInfo({ ...instituteInfo, examTitle: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                Default Examination Centre Venue
+              </label>
+              <input
+                type="text"
+                value={instituteInfo.examCentre || "(11-12) - Ramanbaug, New English School, Pune"}
+                onChange={(e) => setInstituteInfo({ ...instituteInfo, examCentre: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm"
+                placeholder="e.g. (11-12) - Ramanbaug, New English School, Pune"
               />
             </div>
 
