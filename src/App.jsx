@@ -497,7 +497,10 @@ export default function App() {
             setRules={setRules}
             prohibitedItems={prohibitedItems}
             setProhibitedItems={setProhibitedItems}
+            candidates={candidates}
+            setCandidates={setCandidates}
             onOpenSmtpModal={() => setIsSmtpModalOpen(true)}
+            onGoToPreview={() => setActiveTab('PREVIEW')}
           />
         )}
       </main>
