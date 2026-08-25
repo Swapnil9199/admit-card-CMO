@@ -293,18 +293,20 @@ export default function App() {
     const now = new Date();
     const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    const updated = candidates.map(c => {
-      if (c.id === id) {
-        return {
-          ...c,
-          attendanceStatus: newStatus,
-          verifiedAt: newStatus === 'Present' ? timeStr : null
-        };
-      }
-      return c;
+    setCandidates(prevCandidates => {
+      const updated = prevCandidates.map(c => {
+        if (c.id === id) {
+          return {
+            ...c,
+            attendanceStatus: newStatus,
+            verifiedAt: newStatus === 'Present' ? timeStr : null
+          };
+        }
+        return c;
+      });
+      localStorage.setItem('cm_candidates', JSON.stringify(updated));
+      return updated;
     });
-
-    setCandidates(updated);
   };
 
   const handleResetAllAttendance = () => {
