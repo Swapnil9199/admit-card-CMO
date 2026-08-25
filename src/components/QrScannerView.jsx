@@ -16,44 +16,62 @@ import {
   Camera,
   RefreshCw,
   Zap,
-  Volume2
+  Volume2,
+  Upload,
+  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 // Play instant verification audio beep
 function playScanBeep() {
   try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz A5 note
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
 
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.12);
+    osc.stop(audioCtx.currentTime + 0.15);
   } catch (e) {
-    // Ignore audio error if user hasn't interacted with audio context yet
+    // Ignore audio error
   }
 }
 
-export default function QrScannerView({ candidates, onMarkAttendance }) {
+export default function QrScannerView({ candidates = [], onMarkAttendance }) {
   const [manualCode, setManualCode] = useState('');
   const [scannedResult, setScannedResult] = useState(null);
   const [scanStatus, setScanStatus] = useState(null); // 'SUCCESS', 'NOT_FOUND', 'ALREADY_PRESENT'
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraStarting, setIsCameraStarting] = useState(false);
   const [cameras, setCameras] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState('');
   const [cameraError, setCameraError] = useState('');
+  const [lastScannedText, setLastScannedText] = useState('');
 
   const html5QrCodeRef = useRef(null);
   const lastScannedCodeRef = useRef('');
   const lastScannedTimeRef = useRef(0);
+
+  // Use refs for fresh access to props in camera scanner callbacks (fixes stale closure!)
+  const candidatesRef = useRef(candidates);
+  const onMarkAttendanceRef = useRef(onMarkAttendance);
+
+  useEffect(() => {
+    candidatesRef.current = candidates;
+  }, [candidates]);
+
+  useEffect(() => {
+    onMarkAttendanceRef.current = onMarkAttendance;
+  }, [onMarkAttendance]);
 
   // Discover available cameras
   useEffect(() => {
@@ -61,7 +79,6 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
       .then((devices) => {
         if (devices && devices.length > 0) {
           setCameras(devices);
-          // Prefer back/environment camera if available
           const backCam = devices.find(d =>
             d.label.toLowerCase().includes('back') ||
             d.label.toLowerCase().includes('rear') ||
@@ -71,114 +88,185 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
         }
       })
       .catch((err) => {
-        console.warn("Could not pre-fetch cameras:", err);
+        console.warn("Could not discover cameras initially:", err);
       });
   }, []);
 
-  // Camera start/stop lifecycle with ultra-fast direct Html5Qrcode engine
-  useEffect(() => {
-    let qrInstance = null;
+  // Robust Camera Start Function
+  const startScanning = async (targetCameraId) => {
+    setCameraError('');
+    setIsCameraStarting(true);
 
-    if (isCameraActive) {
-      setCameraError('');
-      const elementId = "qr-reader-viewport";
-
-      try {
-        qrInstance = new Html5Qrcode(elementId, {
-          // Hardware-accelerated native Barcode/QR detection API
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          },
-          verbose: false
-        });
-        html5QrCodeRef.current = qrInstance;
-
-        const config = {
-          fps: 25, // Ultra-fast 25 FPS frame rate for instant recognition
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const boxSize = Math.floor(minEdge * 0.85);
-            return { width: boxSize, height: boxSize };
-          },
-          aspectRatio: 1.0
-        };
-
-        const cameraIdOrConfig = selectedCameraId
-          ? selectedCameraId
-          : { facingMode: "environment" };
-
-        qrInstance
-          .start(
-            cameraIdOrConfig,
-            config,
-            (decodedText) => {
-              handleFastDecodedText(decodedText);
-            },
-            (errorMsg) => {
-              // Frame scanning progress (ignore normal continuous frame search)
-            }
-          )
-          .catch((err) => {
-            console.error("Camera start error:", err);
-            setCameraError(
-              err?.message || "Camera permission denied or camera unavailable. Please allow camera access in browser."
-            );
-            setIsCameraActive(false);
-          });
-      } catch (err) {
-        console.error("Scanner init error:", err);
-        setCameraError(err.message || "Failed to initialize camera scanner.");
-        setIsCameraActive(false);
-      }
-    }
-
-    return () => {
+    try {
+      // Ensure any existing instance is cleanly stopped
       if (html5QrCodeRef.current) {
-        const instance = html5QrCodeRef.current;
+        try {
+          if (html5QrCodeRef.current.isScanning) {
+            await html5QrCodeRef.current.stop();
+          }
+          await html5QrCodeRef.current.clear();
+        } catch (e) {}
         html5QrCodeRef.current = null;
+      }
 
-        if (instance.isScanning) {
-          instance
-            .stop()
-            .then(() => {
-              instance.clear();
-            })
-            .catch((err) => {
-              console.warn("Error stopping scanner:", err);
-            });
-        } else {
-          try {
-            instance.clear();
-          } catch (e) {}
+      const elementId = "qr-reader-viewport";
+      const viewportEl = document.getElementById(elementId);
+      if (!viewportEl) {
+        throw new Error("Scanner viewport element not ready. Please try again.");
+      }
+
+      const qrInstance = new Html5Qrcode(elementId, {
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
+        verbose: false
+      });
+      html5QrCodeRef.current = qrInstance;
+
+      const scanConfig = {
+        fps: 20,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.max(180, Math.floor(minEdge * 0.82));
+          return { width: boxSize, height: boxSize };
+        },
+        aspectRatio: 1.0
+      };
+
+      // Try camera launch with graceful fallback
+      let started = false;
+
+      // 1. Try selectedCameraId if user picked one
+      if (targetCameraId) {
+        try {
+          await qrInstance.start(
+            targetCameraId,
+            scanConfig,
+            (decodedText) => handleDecodedText(decodedText),
+            () => {}
+          );
+          started = true;
+        } catch (e) {
+          console.warn("Could not start specific camera ID, trying environment camera:", e);
         }
       }
-    };
-  }, [isCameraActive, selectedCameraId]);
 
-  // Fast decoded text processing with instant debounce
-  const handleFastDecodedText = (text) => {
+      // 2. Try rear/environment camera
+      if (!started) {
+        try {
+          await qrInstance.start(
+            { facingMode: "environment" },
+            scanConfig,
+            (decodedText) => handleDecodedText(decodedText),
+            () => {}
+          );
+          started = true;
+        } catch (e) {
+          console.warn("Could not start environment camera, trying default user camera:", e);
+        }
+      }
+
+      // 3. Try standard/user camera fallback
+      if (!started) {
+        await qrInstance.start(
+          { facingMode: "user" },
+          scanConfig,
+          (decodedText) => handleDecodedText(decodedText),
+          () => {}
+        );
+        started = true;
+      }
+
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error("Camera startup failed:", err);
+      setCameraError(
+        err.message || "Camera permission denied or camera device is in use by another application."
+      );
+      setIsCameraActive(false);
+    } finally {
+      setIsCameraStarting(false);
+    }
+  };
+
+  // Clean stop function
+  const stopScanning = async () => {
+    setIsCameraActive(false);
+    if (html5QrCodeRef.current) {
+      try {
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
+        await html5QrCodeRef.current.clear();
+      } catch (err) {
+        console.warn("Error stopping scanner:", err);
+      }
+      html5QrCodeRef.current = null;
+    }
+  };
+
+  // Toggle Camera
+  const handleToggleCamera = () => {
+    if (isCameraActive) {
+      stopScanning();
+    } else {
+      startScanning(selectedCameraId);
+    }
+  };
+
+  // Change camera device
+  const handleCameraChange = (e) => {
+    const newId = e.target.value;
+    setSelectedCameraId(newId);
+    if (isCameraActive) {
+      startScanning(newId);
+    }
+  };
+
+  // Clean up on component unmount
+  useEffect(() => {
+    return () => {
+      if (html5QrCodeRef.current) {
+        try {
+          if (html5QrCodeRef.current.isScanning) {
+            html5QrCodeRef.current.stop();
+          }
+          html5QrCodeRef.current.clear();
+        } catch (e) {}
+        html5QrCodeRef.current = null;
+      }
+    };
+  }, []);
+
+  // Universal Decoded Text Processing
+  const handleDecodedText = (text) => {
     if (!text) return;
     const now = Date.now();
 
-    // Prevent repeat scan of the exact same code within 1.8 seconds
-    if (text === lastScannedCodeRef.current && now - lastScannedTimeRef.current < 1800) {
+    // Prevent repeat scan of identical code within 1.5 seconds
+    if (text === lastScannedCodeRef.current && now - lastScannedTimeRef.current < 1500) {
       return;
     }
 
     lastScannedCodeRef.current = text;
     lastScannedTimeRef.current = now;
+    setLastScannedText(text);
 
-    let codeToMatch = text.trim();
+    let codeToMatch = String(text).trim();
 
-    // 1. If QR encodes a JSON payload
+    // 1. Check if payload is a JSON string
     if (codeToMatch.startsWith('{') && codeToMatch.endsWith('}')) {
       try {
         const parsed = JSON.parse(codeToMatch);
-        codeToMatch = parsed.uid || parsed.seatNo || parsed.phone || codeToMatch;
+        // Look up by candidate object directly
+        if (parsed.uid || parsed.seatNo || parsed.phone || parsed.email) {
+          verifyCandidateObject(parsed, text);
+          return;
+        }
       } catch (e) {}
     }
 
-    // 2. If QR encodes a URL with ?verify= query param
+    // 2. Check if payload is URL with ?verify= param
     if (codeToMatch.includes('?verify=')) {
       try {
         const url = new URL(codeToMatch);
@@ -190,66 +278,115 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
       }
     }
 
-    verifyCandidateCode(codeToMatch);
+    verifyCandidateCode(codeToMatch, text);
   };
 
-  const verifyCandidateCode = (code) => {
+  // Verification matching logic
+  const verifyCandidateCode = (code, rawOriginal = '') => {
     if (!code) return;
     const cleanCode = String(code).trim().toLowerCase();
     const digitsOnly = cleanCode.replace(/\D/g, '');
+    const currentList = candidatesRef.current || [];
 
-    // Search across candidates with multi-field fallback
-    const found = candidates.find(c => {
-      const cUnique = c.uniqueCode ? c.uniqueCode.toLowerCase() : '';
-      const cId = c.id ? c.id.toLowerCase() : '';
-      const cSeat = c.seatNo ? String(c.seatNo).toLowerCase() : '';
+    // Search across candidate records
+    const found = currentList.find(c => {
+      const cUnique = c.uniqueCode ? String(c.uniqueCode).toLowerCase().trim() : '';
+      const cId = c.id ? String(c.id).toLowerCase().trim() : '';
+      const cSeat = c.seatNo ? String(c.seatNo).toLowerCase().trim() : '';
       const cPhone = c.phone ? String(c.phone).replace(/\D/g, '') : '';
-      const cEmail = c.email ? c.email.toLowerCase() : '';
+      const cEmail = c.email ? String(c.email).toLowerCase().trim() : '';
 
       return (
         cUnique === cleanCode ||
         cId === cleanCode ||
         cSeat === cleanCode ||
-        (digitsOnly && cSeat === digitsOnly.slice(-7)) ||
-        (digitsOnly && cPhone && (cPhone === digitsOnly || cPhone.slice(-7) === digitsOnly.slice(-7))) ||
-        cEmail === cleanCode
+        (digitsOnly.length >= 7 && (cSeat === digitsOnly.slice(-7) || cSeat === digitsOnly)) ||
+        (digitsOnly.length >= 7 && cPhone.length >= 7 && (cPhone === digitsOnly || cPhone.slice(-7) === digitsOnly.slice(-7))) ||
+        (cEmail && cEmail === cleanCode)
       );
     });
 
+    finalizeVerification(found, code, rawOriginal);
+  };
+
+  const verifyCandidateObject = (parsedObj, rawOriginal = '') => {
+    const currentList = candidatesRef.current || [];
+    const uid = parsedObj.uid ? String(parsedObj.uid).toLowerCase().trim() : '';
+    const seatNo = parsedObj.seatNo ? String(parsedObj.seatNo).toLowerCase().trim() : '';
+    const phone = parsedObj.phone ? String(parsedObj.phone).replace(/\D/g, '') : '';
+    const email = parsedObj.email ? String(parsedObj.email).toLowerCase().trim() : '';
+
+    const found = currentList.find(c => {
+      const cUnique = c.uniqueCode ? String(c.uniqueCode).toLowerCase().trim() : '';
+      const cId = c.id ? String(c.id).toLowerCase().trim() : '';
+      const cSeat = c.seatNo ? String(c.seatNo).toLowerCase().trim() : '';
+      const cPhone = c.phone ? String(c.phone).replace(/\D/g, '') : '';
+      const cEmail = c.email ? String(c.email).toLowerCase().trim() : '';
+
+      return (
+        (uid && (cUnique === uid || cId === uid)) ||
+        (seatNo && cSeat === seatNo) ||
+        (phone && (cPhone === phone || cPhone.slice(-7) === phone.slice(-7))) ||
+        (email && cEmail === email)
+      );
+    });
+
+    finalizeVerification(found, parsedObj.uid || parsedObj.seatNo || parsedObj.name, rawOriginal);
+  };
+
+  const finalizeVerification = (found, codeUsed, rawOriginal) => {
     if (found) {
       playScanBeep();
       setScannedResult(found);
       const isAlreadyPresent = found.attendanceStatus === 'Present';
       setScanStatus(isAlreadyPresent ? 'ALREADY_PRESENT' : 'SUCCESS');
 
-      if (!isAlreadyPresent) {
-        onMarkAttendance(found.id, 'Present');
-        confetti({
-          particleCount: 75,
-          spread: 60,
-          origin: { y: 0.6 }
-        });
+      // Mark Present immediately
+      if (onMarkAttendanceRef.current) {
+        onMarkAttendanceRef.current(found.id, 'Present');
       }
+
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
     } else {
-      setScannedResult({ rawCode: code });
+      setScannedResult({ rawCode: codeUsed || rawOriginal });
       setScanStatus('NOT_FOUND');
     }
   };
 
+  // Manual Search Handler
   const handleManualSearch = (e) => {
     e.preventDefault();
     if (manualCode.trim()) {
-      verifyCandidateCode(manualCode);
+      verifyCandidateCode(manualCode.trim(), manualCode);
       setManualCode('');
+    }
+  };
+
+  // Image Upload Scanner Fallback
+  const handleImageFileScan = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const html5QrCode = new Html5Qrcode("qr-reader-viewport");
+      const decodedResult = await html5QrCode.scanFile(file, true);
+      handleDecodedText(decodedResult);
+      html5QrCode.clear();
+    } catch (err) {
+      setCameraError("Could not find or decode a QR code in the uploaded image. Please ensure the image is clear.");
     }
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Left: QR Camera Scanner & Manual Input */}
+      {/* Left: QR Camera Scanner & Controls */}
       <div className="lg:col-span-6 space-y-6">
-        {/* Scanner Card */}
         <div className="p-6 rounded-3xl glass-panel space-y-5">
+          {/* Header & Toggle Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400">
@@ -259,17 +396,19 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                 <h3 className="font-bold text-lg text-white flex items-center gap-2">
                   <span>Admit Card QR Scanner</span>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30 flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-emerald-400" /> Ultra-Fast 25 FPS
+                    <Zap className="w-3 h-3 text-emerald-400" /> Instant Verify
                   </span>
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Instant camera scan with automatic attendance marking
+                  Scan Hall Ticket QR code or upload image to mark attendance
                 </p>
               </div>
             </div>
 
             <button
-              onClick={() => setIsCameraActive(!isCameraActive)}
+              type="button"
+              disabled={isCameraStarting}
+              onClick={handleToggleCamera}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg ${
                 isCameraActive
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 shadow-rose-600/20'
@@ -277,19 +416,19 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
               }`}
             >
               <Camera className="w-4 h-4" />
-              {isCameraActive ? 'Stop Camera' : 'Start Camera Scanner'}
+              {isCameraStarting ? 'Starting...' : isCameraActive ? 'Stop Camera' : 'Start Camera Scanner'}
             </button>
           </div>
 
           {/* Camera Selection if multiple cameras found */}
           {cameras.length > 1 && (
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
               <Camera className="w-4 h-4 text-blue-400 shrink-0" />
               <label className="text-slate-400 text-[11px] whitespace-nowrap">Camera Device:</label>
               <select
                 value={selectedCameraId}
-                onChange={(e) => setSelectedCameraId(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                onChange={handleCameraChange}
+                className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-blue-500"
               >
                 {cameras.map((cam) => (
                   <option key={cam.id} value={cam.id}>
@@ -300,41 +439,72 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
             </div>
           )}
 
-          {/* Camera View Box */}
-          {isCameraActive ? (
-            <div className="bg-slate-950 rounded-2xl border-2 border-blue-500/50 p-2 sm:p-3 overflow-hidden shadow-2xl relative">
-              <div id="qr-reader-viewport" className="w-full text-slate-900 rounded-xl overflow-hidden min-h-[280px]" />
-              <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/80 border border-slate-700 text-[10px] text-emerald-400 font-mono font-bold backdrop-blur">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                LIVE
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-3">
-                <QrCode className="w-8 h-8" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-200">
-                Camera is currently idle
-              </h4>
-              <p className="text-xs text-slate-400 mt-1 max-w-xs">
-                Click <strong>"Start Camera Scanner"</strong> for instant high-speed QR verification.
-              </p>
-            </div>
-          )}
+          {/* Scanner Viewport Container (Always mounted in DOM to prevent mount race condition) */}
+          <div className="bg-slate-950 rounded-2xl border-2 border-slate-800 p-2 sm:p-3 overflow-hidden shadow-2xl relative">
+            <div
+              id="qr-reader-viewport"
+              className="w-full text-slate-900 rounded-xl overflow-hidden min-h-[280px]"
+            />
 
-          {/* Camera Permission / Device Error */}
+            {/* Overlay when Camera is Idle */}
+            {!isCameraActive && (
+              <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                  <QrCode className="w-7 h-7" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-200">
+                    Camera Scanner Idle
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5 max-w-xs">
+                    Click <strong>"Start Camera Scanner"</strong> to scan admit cards, or upload an image file below.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => startScanning(selectedCameraId)}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition flex items-center gap-1.5"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    Open Camera
+                  </button>
+
+                  <label className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition cursor-pointer flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-purple-400" />
+                    Scan Image File
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileScan}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {isCameraActive && (
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/85 border border-slate-700 text-[10px] text-emerald-400 font-mono font-bold backdrop-blur">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                CAMERA SCANNING
+              </div>
+            )}
+          </div>
+
+          {/* Camera Error Alert */}
           {cameraError && (
-            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <XCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
               <span>{cameraError}</span>
             </div>
           )}
 
           {/* Manual Input Fallback */}
-          <div className="pt-4 border-t border-slate-800">
+          <div className="pt-3 border-t border-slate-800">
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-              Manual Seat Number or Mobile Lookup
+              Manual Lookup (Seat No / Mobile Number / Unique ID)
             </label>
             <form onSubmit={handleManualSearch} className="flex gap-2">
               <div className="relative flex-1">
@@ -351,7 +521,7 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                 type="submit"
                 className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition shrink-0"
               >
-                Verify Code
+                Mark Attendance
               </button>
             </form>
           </div>
@@ -363,7 +533,7 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
             <Sparkles className="w-3.5 h-3.5" /> High-Speed Attendance Engine
           </p>
           <p>
-            The scanner uses hardware-accelerated QR decoding. Simply hold the printed or digital hall ticket in front of the lens for instant sub-second verification.
+            Total candidates registered in system: <strong>{candidates.length}</strong>. Hold the QR code in front of the lens to automatically record attendance with a live timestamp.
           </p>
         </div>
       </div>
@@ -384,18 +554,18 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                 Awaiting Scanned QR Code
               </h4>
               <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                Scan an admit card QR code or search by seat number to see verification outcome here.
+                Scan an admit card QR code, upload an admit card image, or search by seat number to see verification outcome here.
               </p>
             </div>
           ) : scanStatus === 'NOT_FOUND' ? (
-            <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center space-y-3">
+            <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center space-y-3 animate-fadeIn">
               <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
                 <XCircle className="w-6 h-6" />
               </div>
               <h4 className="text-base font-bold text-rose-300">
                 Invalid or Unregistered Code
               </h4>
-              <p className="text-xs text-rose-300/80 font-mono">
+              <p className="text-xs text-rose-300/80 font-mono break-all max-w-md mx-auto">
                 Code scanned: "{scannedResult.rawCode}"
               </p>
               <p className="text-xs text-slate-400">
@@ -413,10 +583,10 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                     : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
                 }`}
               >
-                <CheckCircle2 className="w-6 h-6 shrink-0" />
+                <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-400" />
                 <div>
                   <h4 className="font-bold text-sm">
-                    {scanStatus === 'SUCCESS' ? '✓ Verification Successful - Marked Present!' : 'Candidate Verified (Already Marked Present)'}
+                    {scanStatus === 'SUCCESS' ? '✓ Attendance Marked Present Successfully!' : 'Candidate Verified (Already Marked Present)'}
                   </h4>
                   <p className="text-xs opacity-90 font-mono">
                     Timestamp: {scannedResult.verifiedAt || new Date().toLocaleString()}
@@ -443,7 +613,7 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                       <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono text-xs font-bold border border-blue-500/30">
                         Seat: {scannedResult.seatNo}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono text-xs border border-purple-500/30">
+                      <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono text-xs border border-purple-500/30">
                         {scannedResult.uniqueCode}
                       </span>
                     </div>
@@ -470,7 +640,13 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                   <span className="text-xs text-slate-400">Attendance Status:</span>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => onMarkAttendance(scannedResult.id, 'Present')}
+                      type="button"
+                      onClick={() => {
+                        if (onMarkAttendanceRef.current) {
+                          onMarkAttendanceRef.current(scannedResult.id, 'Present');
+                          setScannedResult(prev => ({ ...prev, attendanceStatus: 'Present' }));
+                        }
+                      }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                         scannedResult.attendanceStatus === 'Present'
                           ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
@@ -480,7 +656,13 @@ export default function QrScannerView({ candidates, onMarkAttendance }) {
                       Present
                     </button>
                     <button
-                      onClick={() => onMarkAttendance(scannedResult.id, 'Absent')}
+                      type="button"
+                      onClick={() => {
+                        if (onMarkAttendanceRef.current) {
+                          onMarkAttendanceRef.current(scannedResult.id, 'Absent');
+                          setScannedResult(prev => ({ ...prev, attendanceStatus: 'Absent' }));
+                        }
+                      }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                         scannedResult.attendanceStatus === 'Absent'
                           ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
