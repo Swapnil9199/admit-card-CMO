@@ -352,7 +352,7 @@ export default function AuthPortal({ onLoginSuccess }) {
 
         {/* Security Footer */}
         <div className="text-center text-[11px] text-slate-500">
-          Combine Mentor Official • Rayat Prabodhini Examination Portal
+          Combine Mentor Official • Official Examination & Hall Ticket Portal
         </div>
       </div>
     </div>

@@ -255,7 +255,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
               {instituteInfo?.signatoryTitle || "HEAD OF EXAM OPERATIONS"}
             </p>
             <p className="text-[10px] text-slate-600">
-              {instituteInfo?.signatorySubtext || "Rayat Prabodhini / Combine Mentor Official, Pune"}
+              {instituteInfo?.signatorySubtext || "Combine Mentor Official, Pune"}
             </p>
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
                 "आसन क्रमांक: OMR शीटवर प्रवेशपत्रात नमूद केलेला ७ अंकी आसन क्रमांक (Seat No.) अचूक भरावा.",
                 "उपस्थिती: परीक्षा सुरू होण्यापूर्वी किमान ३० मिनिटे अगोदर परीक्षा केंद्रावर हजर राहावे.",
                 "वेळापत्रक व अधिकार: परीक्षेचे वेळापत्रक खालील तक्त्यात दिले आहे. अपरिहार्य कारणास्तव परीक्षा केंद्र किंवा वेळेत बदल करण्याचा अधिकार संस्थेने राखून ठेवला आहे.",
-                "महत्त्वाचे अपडेट्स: परीक्षेच्या माहितीसाठी व मदतीसाठी Telegram वर @rayattest26 सर्च करून चॅनेल जॉईन करावे, तसेच rayattest.in या संकेतस्थळाला (Website) नियमित भेट द्यावी.",
+                "महत्त्वाचे अपडेट्स: परीक्षेच्या माहितीसाठी व मदतीसाठी Telegram वर @combinementor सर्च करून चॅनेल जॉईन करावे, तसेच combinementor.in या संकेतस्थळाला (Website) नियमित भेट द्यावी.",
                 "सर्व यंत्रणा ऑनलाईन पद्धतीने असल्यामुळे विद्यार्थ्यांना केवळ त्यांच्या नियोजित वेळेत आणि नियोजित परीक्षा केंद्रावरच परीक्षा देता येईल.",
                 "कुठल्याही परिस्थितीत उमेदवाराच्या परीक्षा केंद्रात आणि वेळेत तांत्रिक अडचणीच्या पार्श्वभूमीवर बदल करता येत नाही."
               ]).map((rule, index) => (
@@ -316,7 +316,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
               <span>☑</span> Best wishes for your examination!
             </p>
             <p className="text-[11px] font-semibold text-slate-700 mt-1">
-              {instituteInfo?.instituteName || "Combine Mentor Official / Rayat Prabodhini"}
+              {instituteInfo?.instituteName || "COMBINE MENTOR OFFICIAL"}
             </p>
             <p className="text-[10px] text-slate-500">
               Test Series & Examination Department

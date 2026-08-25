@@ -285,11 +285,11 @@ app.post('/api/send-admit-card-email', async (req, res) => {
 
             <p style="font-size: 13px; color: #64748b;">
               Sent by: <strong>${adminSenderName}</strong> (${adminSenderEmail})<br/>
-              If you have any queries, please visit <a href="https://rayattest.in" style="color: #0284c7;">rayattest.in</a> or reach out on Telegram <strong>@rayattest26</strong>.
+              If you have any queries, please visit <a href="https://combinementor.in" style="color: #0284c7;">combinementor.in</a> or reach out on Telegram <strong>@combinementor</strong>.
             </p>
           </div>
           <div class="footer">
-            &copy; 2026 Combine Mentor Official / Rayat Prabodhini Pune. All rights reserved.
+            &copy; 2026 Combine Mentor Official, Pune. All rights reserved.
           </div>
         </div>
       </body>
