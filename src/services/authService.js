@@ -1,150 +1,84 @@
-// Admin Authentication and User Management Service
+// Dedicated Single Administrator Authentication Service for Combine Mentor Official
 
-const STORAGE_ADMINS_KEY = 'cm_admins';
 const STORAGE_CURRENT_ADMIN_KEY = 'cm_current_admin';
 
-// Default pre-seeded admin accounts
-const DEFAULT_ADMINS = [
-  {
-    id: 'ADMIN-001',
-    name: 'Combine Mentor Admin',
-    email: 'admin@combinementor.in',
-    password: 'admin@combinementor',
-    role: 'SUPER_ADMIN',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'ADMIN-002',
-    name: 'Swapnil Nikat (Chief Admin)',
-    email: 'swapnilnikat9399@gmail.com',
-    password: 'admin@combinementor',
-    role: 'SUPER_ADMIN',
-    createdAt: new Date().toISOString()
-  }
-];
+// Fixed Dedicated Master Administrator Credentials
+export const FIXED_ADMIN_EMAIL = 'admin@admin.com';
+export const FIXED_ADMIN_PASSWORD = 'Combinementor@1234';
 
-// Initialize admins storage
-export function initAdmins() {
-  const existing = localStorage.getItem(STORAGE_ADMINS_KEY);
-  if (!existing) {
-    localStorage.setItem(STORAGE_ADMINS_KEY, JSON.stringify(DEFAULT_ADMINS));
+// Clean up any legacy multi-user accounts
+export function clearLegacyAdmins() {
+  localStorage.removeItem('cm_admins');
+  const current = localStorage.getItem(STORAGE_CURRENT_ADMIN_KEY);
+  if (current) {
+    try {
+      const parsed = JSON.parse(current);
+      if (parsed.email?.toLowerCase() !== FIXED_ADMIN_EMAIL.toLowerCase()) {
+        localStorage.removeItem(STORAGE_CURRENT_ADMIN_KEY);
+      }
+    } catch (e) {
+      localStorage.removeItem(STORAGE_CURRENT_ADMIN_KEY);
+    }
   }
 }
 
-// Get all registered administrators
-export function getRegisteredAdmins() {
-  initAdmins();
-  try {
-    const raw = localStorage.getItem(STORAGE_ADMINS_KEY);
-    return raw ? JSON.parse(raw) : DEFAULT_ADMINS;
-  } catch (e) {
-    return DEFAULT_ADMINS;
-  }
-}
-
-// Register a new Administrator
-export function registerAdmin({ name, email, password }) {
-  initAdmins();
-  if (!name || !name.trim()) {
-    return { success: false, message: 'Please enter your Full Name.' };
-  }
-  if (!email || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-    return { success: false, message: 'Please enter a valid official Email Address.' };
-  }
-  if (!password || password.length < 6) {
-    return { success: false, message: 'Password must be at least 6 characters long.' };
-  }
-
-  const cleanEmail = email.trim().toLowerCase();
-  const admins = getRegisteredAdmins();
-
-  const existing = admins.find(a => a.email.toLowerCase() === cleanEmail);
-  if (existing) {
-    return { success: false, message: 'An administrator with this email address already exists. Please log in.' };
-  }
-
-  const newAdmin = {
-    id: `ADMIN-${Date.now().toString().slice(-6)}`,
-    name: name.trim(),
-    email: cleanEmail,
-    password: password, // In production, hashed with bcrypt/argon2
-    role: admins.length === 0 ? 'SUPER_ADMIN' : 'EXAM_ADMIN',
-    createdAt: new Date().toISOString()
-  };
-
-  const updatedAdmins = [...admins, newAdmin];
-  localStorage.setItem(STORAGE_ADMINS_KEY, JSON.stringify(updatedAdmins));
-
-  // Automatically log in the newly registered admin
-  const sessionUser = {
-    id: newAdmin.id,
-    name: newAdmin.name,
-    email: newAdmin.email,
-    role: newAdmin.role,
-    loginTime: new Date().toISOString()
-  };
-  localStorage.setItem(STORAGE_CURRENT_ADMIN_KEY, JSON.stringify(sessionUser));
-
-  return {
-    success: true,
-    message: 'Admin account registered successfully!',
-    user: sessionUser
-  };
-}
-
-// Login an Administrator
+// Authenticate Administrator
 export function loginAdmin(email, password) {
-  initAdmins();
+  clearLegacyAdmins();
+
   if (!email || !email.trim()) {
-    return { success: false, message: 'Please enter your Admin Email Address.' };
+    return { success: false, message: 'Please enter the Admin Login ID / Email.' };
   }
   if (!password) {
-    return { success: false, message: 'Please enter your Admin Password.' };
+    return { success: false, message: 'Please enter the Admin Password.' };
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const admins = getRegisteredAdmins();
 
-  const matched = admins.find(
-    a => a.email.toLowerCase() === cleanEmail && a.password === password
-  );
+  // Strict match against the dedicated master credentials
+  if (cleanEmail === FIXED_ADMIN_EMAIL.toLowerCase() && password === FIXED_ADMIN_PASSWORD) {
+    const sessionUser = {
+      id: 'ADMIN-01',
+      name: 'Combine Mentor Admin',
+      email: FIXED_ADMIN_EMAIL,
+      role: 'MASTER_ADMIN',
+      loginTime: new Date().toISOString()
+    };
 
-  if (!matched) {
+    localStorage.setItem(STORAGE_CURRENT_ADMIN_KEY, JSON.stringify(sessionUser));
+
     return {
-      success: false,
-      message: 'Invalid Admin Email or Password. Please check credentials or register a new admin account.'
+      success: true,
+      message: 'Admin Authentication Successful!',
+      user: sessionUser
     };
   }
 
-  const sessionUser = {
-    id: matched.id,
-    name: matched.name,
-    email: matched.email,
-    role: matched.role || 'EXAM_ADMIN',
-    loginTime: new Date().toISOString()
-  };
-
-  localStorage.setItem(STORAGE_CURRENT_ADMIN_KEY, JSON.stringify(sessionUser));
-
   return {
-    success: true,
-    message: `Welcome back, ${matched.name}!`,
-    user: sessionUser
+    success: false,
+    message: 'Invalid User ID or Password. Only authorized administrators can access.'
   };
 }
 
-// Get Currently Logged In Admin Session
+// Get Active Admin Session
 export function getCurrentAdmin() {
+  clearLegacyAdmins();
   try {
     const raw = localStorage.getItem(STORAGE_CURRENT_ADMIN_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const user = JSON.parse(raw);
+    if (user && user.email?.toLowerCase() === FIXED_ADMIN_EMAIL.toLowerCase()) {
+      return user;
+    }
+    localStorage.removeItem(STORAGE_CURRENT_ADMIN_KEY);
+    return null;
   } catch (e) {
+    localStorage.removeItem(STORAGE_CURRENT_ADMIN_KEY);
     return null;
   }
 }
 
-// Logout Administrator
+// Logout Administrator Session
 export function logoutAdmin() {
   localStorage.removeItem(STORAGE_CURRENT_ADMIN_KEY);
   return { success: true };
