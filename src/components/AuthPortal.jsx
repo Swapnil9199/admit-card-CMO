@@ -6,13 +6,12 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Sparkles,
   AlertCircle,
   CheckCircle2,
   KeyRound
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { loginAdmin, FIXED_ADMIN_EMAIL, FIXED_ADMIN_PASSWORD } from '../services/authService';
+import { loginAdmin } from '../services/authService';
 
 export default function AuthPortal({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -49,12 +48,6 @@ export default function AuthPortal({ onLoginSuccess }) {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleAutofill = () => {
-    setEmail(FIXED_ADMIN_EMAIL);
-    setPassword(FIXED_ADMIN_PASSWORD);
-    setErrorMsg('');
   };
 
   return (
@@ -131,7 +124,7 @@ export default function AuthPortal({ onLoginSuccess }) {
               <input
                 type="email"
                 required
-                placeholder="admin@admin.com"
+                placeholder="username@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl glass-input text-xs font-mono"
@@ -170,18 +163,6 @@ export default function AuthPortal({ onLoginSuccess }) {
               <span>Sign In to Admin Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-
-            {/* Quick 1-Click Autofill Preset */}
-            <div className="pt-2 border-t border-slate-800/80">
-              <button
-                type="button"
-                onClick={handleAutofill}
-                className="w-full p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-center border border-slate-800 text-[11px] text-blue-300 hover:text-blue-200 transition font-mono flex items-center justify-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Autofill Master Credentials</span>
-              </button>
-            </div>
           </form>
         </div>
 
