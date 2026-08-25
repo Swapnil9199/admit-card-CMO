@@ -36,12 +36,7 @@ import {
   FileDown,
   Mail,
   Send,
-  Loader2,
-  ZoomIn,
-  ZoomOut,
-  Smartphone,
-  Monitor,
-  RotateCcw
+  Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -91,6 +86,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW' | 'CANDIDATES' | 'SCANNER' | 'LOGS' | 'SETTINGS'
   const [selectedCandidateId, setSelectedCandidateId] = useState(() => candidates[0]?.id || null);
 
+  // Mobile & Live Preview Viewport / Zoom State
+  const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [isAutoFit, setIsAutoFit] = useState(true);
+  const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
+
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
@@ -108,33 +108,6 @@ export default function App() {
   // Selected candidate object
   const selectedCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
   const currentCandidateIndex = candidates.findIndex(c => c.id === (selectedCandidate?.id || selectedCandidateId));
-
-  // Interactive Mobile Zoom & Viewport Scaling State
-  const [zoomMode, setZoomMode] = useState('fit'); // 'fit' | '100' | '75' | '125' | 'custom'
-  const [customZoom, setCustomZoom] = useState(1);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const calculateScale = () => {
-    if (zoomMode === '100') return 1.0;
-    if (zoomMode === '75') return 0.75;
-    if (zoomMode === '125') return 1.25;
-    if (zoomMode === 'custom') return customZoom;
-    // 'fit' mode: dynamically scale so the A4 card fits cleanly without horizontal scrolling
-    if (windowWidth < 840) {
-      const padding = windowWidth < 640 ? 28 : 48;
-      const availableWidth = windowWidth - padding;
-      return Math.min(1, Math.max(0.35, availableWidth / 780));
-    }
-    return 1.0;
-  };
-
-  const currentScale = calculateScale();
 
   // Sync state changes to LocalStorage
   useEffect(() => {
@@ -528,102 +501,133 @@ export default function App() {
               </div>
             </div>
 
-            {/* Live Admit Card Document View with Interactive Mobile Zoom Toolbar */}
-            <div className="w-full rounded-3xl bg-slate-900/40 border border-slate-800/80 shadow-2xl overflow-hidden flex flex-col items-center">
-              {/* Interactive Zoom & Mobile Viewport Toolbar */}
-              <div className="flex items-center justify-between flex-wrap gap-2 w-full px-3 sm:px-6 py-2.5 bg-slate-900/90 border-b border-slate-800 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-200 hidden sm:inline">
-                    Admit Card Viewport:
-                  </span>
+            {/* Smart Zoom, Fit & Mobile Viewport Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md text-xs">
+              {/* Left: View Mode Presets */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setIsAutoFit(true);
+                    setZoomLevel(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 ${
+                    isAutoFit
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  }`}
+                  title="Fit complete Admit Card into screen without horizontal scrolling"
+                >
+                  <span>📱 Fit Screen</span>
+                </button>
 
-                  {/* Mode Buttons */}
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                    <button
-                      onClick={() => setZoomMode('fit')}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                        zoomMode === 'fit'
-                          ? 'bg-blue-600 text-white shadow'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                      title="Fit entire A4 card to screen width"
-                    >
-                      <Smartphone className="w-3.5 h-3.5" />
-                      <span>Fit Screen</span>
-                    </button>
-
-                    <button
-                      onClick={() => setZoomMode('100')}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                        zoomMode === '100'
-                          ? 'bg-blue-600 text-white shadow'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                      title="View at actual 100% A4 print size with horizontal swipe"
-                    >
-                      <Monitor className="w-3.5 h-3.5" />
-                      <span>100% (A4)</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Incremental Zoom Controls */}
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => {
-                      setZoomMode('custom');
-                      setCustomZoom(prev => Math.max(0.35, +(prev - 0.1).toFixed(2)));
-                    }}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-                    title="Zoom Out (-)"
-                  >
-                    <ZoomOut className="w-3.5 h-3.5" />
-                  </button>
-
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-[11px] font-mono font-bold text-blue-300 min-w-[44px] text-center">
-                    {Math.round(currentScale * 100)}%
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      setZoomMode('custom');
-                      setCustomZoom(prev => Math.min(2.0, +(prev + 0.1).toFixed(2)));
-                    }}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-                    title="Zoom In (+)"
-                  >
-                    <ZoomIn className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setZoomMode('fit');
-                      setCustomZoom(1);
-                    }}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition ml-1"
-                    title="Reset Zoom"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setZoomLevel(1.0);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 ${
+                    !isAutoFit && zoomLevel === 1.0
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  }`}
+                  title="View at full 100% resolution (780px)"
+                >
+                  <span>📄 100% Original</span>
+                </button>
               </div>
 
-              {/* Scaled & Touch-Scrollable Viewport */}
+              {/* Right: Fine Zoom & Fullscreen Controls */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <button
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setZoomLevel(prev => Math.max(0.4, Number((prev - 0.15).toFixed(2))));
+                  }}
+                  disabled={zoomLevel <= 0.4 && !isAutoFit}
+                  className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold disabled:opacity-30 transition"
+                  title="Zoom Out"
+                >
+                  <span>🔍 -</span>
+                </button>
+
+                <span className="font-mono text-[11px] font-bold text-slate-300 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 min-w-[50px] text-center">
+                  {isAutoFit ? 'Auto' : `${Math.round(zoomLevel * 100)}%`}
+                </span>
+
+                <button
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setZoomLevel(prev => Math.min(2.0, Number((prev + 0.15).toFixed(2))));
+                  }}
+                  disabled={zoomLevel >= 2.0 && !isAutoFit}
+                  className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold disabled:opacity-30 transition"
+                  title="Zoom In"
+                >
+                  <span>🔍 +</span>
+                </button>
+
+                <button
+                  onClick={() => setIsFullscreenPreview(!isFullscreenPreview)}
+                  className={`p-1.5 sm:px-2.5 sm:py-1 rounded-xl font-bold transition ${
+                    isFullscreenPreview
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                  }`}
+                  title="Toggle Fullscreen View"
+                >
+                  <span>{isFullscreenPreview ? 'Exit Fullscreen' : '⛶ Fullscreen'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Admit Card Document View (With Smart Touch Pan & Zoom Viewport) */}
+            <div
+              className={`w-full rounded-3xl bg-slate-900/40 border border-slate-800/80 shadow-2xl overflow-hidden flex flex-col items-center ${
+                isFullscreenPreview
+                  ? 'fixed inset-0 z-50 rounded-none bg-slate-950/98 p-4 overflow-auto backdrop-blur-2xl'
+                  : ''
+              }`}
+            >
+              {/* Fullscreen header exit button if in fullscreen */}
+              {isFullscreenPreview && (
+                <div className="flex items-center justify-between w-full max-w-4xl pb-3 border-b border-slate-800 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-white">Admit Card Fullscreen Viewer</span>
+                    <span className="text-xs text-blue-400 font-mono">#{selectedCandidate?.seatNo}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsFullscreenPreview(false)}
+                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow"
+                  >
+                    ✕ Close Fullscreen
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile Double-tap hint */}
+              <div className="md:hidden flex items-center justify-between w-full px-4 py-2 bg-slate-900/90 border-b border-slate-800 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1.5 font-semibold text-slate-300">
+                  <span>💡</span> Double-tap card to toggle Zoom
+                </span>
+                <span className="text-blue-400 font-bold flex items-center gap-1">
+                  <span>↔</span> Swipe to pan
+                </span>
+              </div>
+
+              {/* Scrollable & Scalable Viewport */}
               <div
-                className="w-full overflow-x-auto touch-pan-x p-2 sm:p-6 flex justify-center no-scrollbar"
-                style={{
-                  minHeight: currentScale < 1 ? `${2200 * currentScale + 40}px` : 'auto'
-                }}
+                onDoubleClick={() => setIsAutoFit(prev => !prev)}
+                className="w-full overflow-x-auto overflow-y-auto touch-pan-x touch-pan-y p-2 sm:p-6 flex justify-start md:justify-center items-start min-h-[400px] cursor-grab active:cursor-grabbing"
               >
                 <div
                   style={{
-                    transform: `scale(${currentScale})`,
+                    transform: isAutoFit
+                      ? `scale(min(1, calc((100vw - 32px) / 780)))`
+                      : `scale(${zoomLevel})`,
                     transformOrigin: 'top center',
-                    width: '780px',
-                    marginBottom: currentScale < 1 ? `-${(1 - currentScale) * 2200}px` : 0,
                     transition: 'transform 0.2s ease-out'
                   }}
-                  className="shrink-0"
+                  className="shrink-0 my-2"
                 >
                   <AdmitCard
                     id="admit-card-live-preview"

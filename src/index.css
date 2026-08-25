@@ -13,6 +13,8 @@
     overflow-x: hidden;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
   }
 }
 
