@@ -10,8 +10,16 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
     );
   }
 
-  // Fast-Scan High Contrast QR Code data payload
-  const qrCodeValue = candidate.uniqueCode || `CM-MPSC-${candidate.seatNo || candidate.id}`;
+  // QR Code data payload: encodes candidate unique code + verification metadata
+  const qrCodeValue = JSON.stringify({
+    uid: candidate.uniqueCode || candidate.id,
+    name: candidate.name,
+    seatNo: candidate.seatNo,
+    phone: candidate.phone,
+    email: candidate.email,
+    exam: candidate.examTitle,
+    verifyUrl: `${window.location.origin}/?verify=${candidate.uniqueCode || candidate.id}`
+  });
 
   return (
     <div id={id} className="admit-card-container flex flex-col gap-8 w-full max-w-[820px] mx-auto text-slate-900 select-text">
@@ -50,13 +58,13 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
               </p>
             </div>
 
-            {/* High-Speed QR Code */}
+            {/* QR Code */}
             <div className="w-1/4 flex flex-col items-end">
               <div className="p-1.5 border-2 border-slate-900 rounded bg-white shadow-sm flex flex-col items-center">
                 <QRCodeSVG
                   value={qrCodeValue}
-                  size={88}
-                  level="M"
+                  size={84}
+                  level="H"
                   includeMargin={false}
                 />
                 <span className="text-[9px] font-mono font-bold tracking-tight text-slate-800 mt-1">
