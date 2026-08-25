@@ -183,7 +183,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
                     {candidate.seatNo || "1250042"}
                   </td>
                   <td className="p-2.5 text-left pl-4 font-semibold text-slate-900">
-                    {candidate.examCentre || "(11-12) - Ramanbaug, New English School, Pune"}
+                    {candidate.examCentre || instituteInfo?.examCentre || "S.P. College (Sir Parashurambhau College), Tilak Road, Pune"}
                   </td>
                 </tr>
               </tbody>

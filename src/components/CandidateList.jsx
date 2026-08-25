@@ -344,7 +344,7 @@ export default function CandidateList({
                           </span>
                         </div>
                         <div className="text-[11px] text-slate-400 mt-1 truncate max-w-[180px]" title={c.examCentre}>
-                          {c.examCentre || "(11-12) - Ramanbaug, Pune"}
+                          {c.examCentre || "S.P. College, Pune"}
                         </div>
                       </td>
 
@@ -506,7 +506,7 @@ export default function CandidateList({
                 {/* Exam Centre & Status */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-[11px]">
                   <span className="text-slate-400 truncate max-w-[180px]">
-                    {c.examCentre || "(11-12) - Ramanbaug, Pune"}
+                    {c.examCentre || "S.P. College, Pune"}
                   </span>
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold shrink-0 ${
