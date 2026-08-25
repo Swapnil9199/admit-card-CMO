@@ -32,6 +32,8 @@ export default function TemplateCustomizer({
   setProhibitedItems,
   candidates = [],
   setCandidates,
+  examCentres,
+  setExamCentres,
   onOpenSmtpModal,
   onGoToPreview
 }) {
@@ -450,19 +452,117 @@ export default function TemplateCustomizer({
                 className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Signatory Subtext / Institute Reference
-              </label>
-              <input
-                type="text"
-                value={draftInstitute.signatorySubtext || ""}
-                onChange={(e) => setDraftInstitute({ ...draftInstitute, signatorySubtext: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
-              />
-            </div>
           </div>
+
+          {/* Exam Centres Management Box */}
+          {examCentres && setExamCentres && (
+            <div className="pt-4 border-t border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                    Manage Examination Centres ({examCentres.length})
+                  </h5>
+                  <p className="text-[11px] text-slate-400">
+                    Add new centres or delete unused centres. S.P. College Pune is default.
+                  </p>
+                </div>
+              </div>
+
+              {/* Add Centre Row */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter new examination centre name & address..."
+                  id="template-add-centre-input"
+                  className="flex-1 px-3 py-2 rounded-xl glass-input text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const val = e.target.value.trim();
+                      if (val && !examCentres.includes(val)) {
+                        const updated = [...examCentres, val];
+                        setExamCentres(updated);
+                        localStorage.setItem('cm_exam_centres', JSON.stringify(updated));
+                        e.target.value = '';
+                        triggerSaveNotification(`Added centre: ${val}`);
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('template-add-centre-input');
+                    const val = input ? input.value.trim() : '';
+                    if (val && !examCentres.includes(val)) {
+                      const updated = [...examCentres, val];
+                      setExamCentres(updated);
+                      localStorage.setItem('cm_exam_centres', JSON.stringify(updated));
+                      input.value = '';
+                      triggerSaveNotification(`Added centre: ${val}`);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0"
+                >
+                  + Add Centre
+                </button>
+              </div>
+
+              {/* Centre List Chips */}
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {examCentres.map((centre, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="text-slate-200 font-medium">{centre}</span>
+                      {centre.includes('S.P. College') && (
+                        <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[9px] font-bold border border-blue-500/30">
+                          Default
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraftInstitute({ ...draftInstitute, examCentre: centre });
+                          triggerSaveNotification(`Selected ${centre} as default centre`);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-[11px] font-semibold"
+                      >
+                        Set Default
+                      </button>
+
+                      {examCentres.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Delete centre "${centre}"?`)) {
+                              const updated = examCentres.filter((_, i) => i !== idx);
+                              setExamCentres(updated);
+                              localStorage.setItem('cm_exam_centres', JSON.stringify(updated));
+                              triggerSaveNotification(`Removed centre`);
+                            }
+                          }}
+                          className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                          title="Delete centre"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button

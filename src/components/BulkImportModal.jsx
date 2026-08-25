@@ -15,24 +15,24 @@ import {
   Check,
   User,
   Phone,
-  Mail
+  Mail,
+  Plus
 } from 'lucide-react';
 import { parseAnyCsvFile, downloadSampleCsvTemplate } from '../utils/csvHelper';
+import { DEFAULT_EXAM_CENTRES } from '../data/defaultData';
 
-const PRESET_EXAM_CENTRES = [
-  "(11-12) - Ramanbaug, New English School, Pune",
-  "(08-04) - Modern High School & Junior College, Shivaji Nagar, Pune",
-  "(05-02) - Fergusson College Campus, F.C. Road, Pune",
-  "(03-01) - Mahatma Phule Krishi Vidyapeeth, Rahuri",
-  "(09-14) - Dr. Babasaheb Ambedkar Marathwada University Centre, Chhatrapati Sambhajinagar",
-  "(01-05) - Rayat Shikshan Sanstha Centre, Satara",
-  "Custom / Type Manual Centre Name..."
-];
-
-export default function BulkImportModal({ isOpen, onClose, onImport, defaultExamTitle = "गट क - पूर्व परीक्षा 2026" }) {
+export default function BulkImportModal({
+  isOpen,
+  onClose,
+  onImport,
+  defaultExamTitle = "गट क - पूर्व परीक्षा 2026",
+  examCentres = DEFAULT_EXAM_CENTRES,
+  onAddExamCentre
+}) {
   const [adminExamTitle, setAdminExamTitle] = useState(defaultExamTitle);
-  const [selectedCentrePreset, setSelectedCentrePreset] = useState(PRESET_EXAM_CENTRES[0]);
-  const [customCentreText, setCustomCentreText] = useState("");
+  const [selectedCentre, setSelectedCentre] = useState(examCentres[0] || "S.P. College (Sir Parashurambhau College), Tilak Road, Pune");
+  const [isAddingNewCentre, setIsAddingNewCentre] = useState(false);
+  const [newCentreInput, setNewCentreInput] = useState('');
 
   const [rawFile, setRawFile] = useState(null);
   const [csvHeaders, setCsvHeaders] = useState([]);
@@ -50,10 +50,20 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
 
   if (!isOpen) return null;
 
-  const currentExamCentre =
-    selectedCentrePreset === "Custom / Type Manual Centre Name..."
-      ? customCentreText || "Official Examination Centre"
-      : selectedCentrePreset;
+  const currentExamCentre = selectedCentre;
+
+  const handleAddNewCentreSubmit = (e) => {
+    e.preventDefault();
+    if (!newCentreInput.trim()) return;
+    const cleanCentre = newCentreInput.trim();
+    if (onAddExamCentre) {
+      onAddExamCentre(cleanCentre);
+    }
+    setSelectedCentre(cleanCentre);
+    setNewCentreInput('');
+    setIsAddingNewCentre(false);
+    handleUpdateAdminBatchSettings(adminExamTitle, cleanCentre);
+  };
 
   const handleFileUpload = async (file) => {
     if (!file) return;
@@ -127,20 +137,20 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-800/40">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-800/40">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-blue-500/20 text-blue-400">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">
+              <h3 className="font-bold text-base sm:text-lg text-white">
                 Universal CSV Import (Any Format Supported)
               </h3>
-              <p className="text-xs text-slate-400">
-                Upload candidate CSV from Google Forms, Excel, or CRM. Auto-fetches <strong>Name, Phone & Email</strong>.
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                Upload student CSV in any format. Auto-fetches <strong>Name, Phone & Email</strong>.
               </p>
             </div>
           </div>
@@ -152,16 +162,16 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1 text-xs">
           {/* Admin Batch Configuration Section */}
-          <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4">
+          <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 text-white font-bold text-sm">
                 <Building2 className="w-4 h-4 text-blue-400" />
                 Admin Batch Settings (Applied to All Candidates)
               </div>
               <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
-                Auto-Smart Detection Enabled
+                Default Centre: S.P. College Pune
               </span>
             </div>
 
@@ -186,52 +196,62 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
 
               {/* Exam Centre Selection */}
               <div>
-                <label className="block font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Assigned Exam Centre (Selected by Admin)
-                </label>
-                <select
-                  value={selectedCentrePreset}
-                  onChange={(e) => {
-                    setSelectedCentrePreset(e.target.value);
-                    const newCentre = e.target.value === "Custom / Type Manual Centre Name..." ? customCentreText : e.target.value;
-                    handleUpdateAdminBatchSettings(adminExamTitle, newCentre);
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs bg-slate-900"
-                >
-                  {PRESET_EXAM_CENTRES.map((centre, idx) => (
-                    <option key={idx} value={centre}>
-                      {centre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Custom Centre Text Input if selected */}
-              {selectedCentrePreset === "Custom / Type Manual Centre Name..." && (
-                <div className="md:col-span-2">
-                  <label className="block font-semibold text-emerald-300 mb-1">
-                    Enter Custom Exam Centre Name & Address:
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                    Assigned Exam Centre (Default: S.P. College)
                   </label>
-                  <input
-                    type="text"
-                    value={customCentreText}
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingNewCentre(!isAddingNewCentre)}
+                    className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    {isAddingNewCentre ? 'Cancel' : '+ Add Centre'}
+                  </button>
+                </div>
+
+                {!isAddingNewCentre ? (
+                  <select
+                    value={selectedCentre}
                     onChange={(e) => {
-                      setCustomCentreText(e.target.value);
+                      setSelectedCentre(e.target.value);
                       handleUpdateAdminBatchSettings(adminExamTitle, e.target.value);
                     }}
-                    placeholder="e.g. (02-08) - Government Polytechnic Hall, Shivaji Nagar, Pune"
-                    className="w-full px-3.5 py-2 rounded-xl glass-input text-xs border-emerald-500/50"
-                  />
-                </div>
-              )}
+                    className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs bg-slate-900 font-medium"
+                  >
+                    {examCentres.map((centre, idx) => (
+                      <option key={idx} value={centre}>
+                        {centre}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCentreInput}
+                      onChange={(e) => setNewCentreInput(e.target.value)}
+                      placeholder="Enter new examination centre name & city..."
+                      className="flex-1 px-3 py-2 rounded-xl glass-input text-xs border-emerald-500/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNewCentreSubmit}
+                      className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0"
+                    >
+                      Add & Select
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Smart Seat No Rule Notification */}
             <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px]">
               <Hash className="w-4 h-4 text-blue-400 shrink-0" />
               <span>
-                <strong>Smart Seat Number:</strong> The system automatically assigns each student's <strong>Seat Number as the last 7 digits of their phone number</strong> (e.g. <code>+91 9874996960</code> ➔ Seat: <code>4996960</code>).
+                <strong>Automatic 7-Digit Seat No:</strong> Computed automatically from the <strong>last 7 digits of each student's phone number</strong>.
               </span>
             </div>
           </div>
@@ -266,14 +286,14 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
                   className="hidden"
                 />
                 <label htmlFor="csv-file-input-smart" className="cursor-pointer flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3 group-hover:scale-110 transition">
                     <UploadCloud className="w-8 h-8" />
                   </div>
                   <h4 className="text-sm font-bold text-white">
-                    Drop your CSV file here in ANY format
+                    Drop your candidate CSV here in ANY format
                   </h4>
                   <p className="text-slate-400 mt-1 max-w-md text-xs">
-                    Our AI-powered engine automatically detects candidate <strong>Name</strong>, <strong>Mobile Number</strong>, and <strong>Email Address</strong> columns regardless of column header names!
+                    Auto-detects candidate <strong>Name</strong>, <strong>Mobile Number</strong>, and <strong>Email Address</strong>.
                   </p>
                   <span className="mt-4 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition">
                     Choose CSV File
@@ -336,7 +356,6 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Name Column Mapping */}
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1">
                         <User className="w-3 h-3 text-blue-400" /> Candidate Name Column:
@@ -354,7 +373,6 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
                       </select>
                     </div>
 
-                    {/* Phone Column Mapping */}
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1">
                         <Phone className="w-3 h-3 text-emerald-400" /> Mobile / Phone Column:
@@ -372,7 +390,6 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
                       </select>
                     </div>
 
-                    {/* Email Column Mapping */}
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-300 mb-1 flex items-center gap-1">
                         <Mail className="w-3 h-3 text-purple-400" /> Email / Gmail Column:
@@ -433,27 +450,27 @@ export default function BulkImportModal({ isOpen, onClose, onImport, defaultExam
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-800/30">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-t border-slate-800 bg-slate-800/30">
           <div className="text-xs text-slate-400">
             {parsedCandidates.length > 0 ? (
               <span className="text-emerald-400 font-semibold">
-                ✓ Ready to import {parsedCandidates.length} candidates with auto-computed 7-digit seat numbers!
+                ✓ Ready to import {parsedCandidates.length} candidate(s) to {currentExamCentre}!
               </span>
             ) : (
-              'Accepts CSV files with any column headers'
+              'Accepts CSV in any format'
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
             >
               Cancel
             </button>
             <button
               disabled={parsedCandidates.length === 0}
               onClick={handleConfirmImport}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
             >
               <Users className="w-4 h-4" />
               Import {parsedCandidates.length > 0 ? `${parsedCandidates.length} Candidates` : 'Candidates'}

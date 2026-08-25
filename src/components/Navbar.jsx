@@ -1,11 +1,13 @@
 import React from 'react';
-import { Award, Users, QrCode, ClipboardCheck, Settings, Printer, Plus, Send, Mail } from 'lucide-react';
+import { Award, Users, QrCode, ClipboardCheck, Settings, Printer, Plus, Send, Mail, LogOut, ShieldCheck, User } from 'lucide-react';
 
 export default function Navbar({
   activeTab,
   setActiveTab,
   candidateCount,
   presentCount,
+  currentAdmin,
+  onLogout,
   onOpenAddModal,
   onOpenBatchPrint,
   onOpenBatchEmail,
@@ -40,7 +42,7 @@ export default function Navbar({
               <div className="font-extrabold text-xs sm:text-base text-white tracking-wide flex items-center gap-1.5 sm:gap-2">
                 <span>COMBINE MENTOR</span>
                 <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[9px] sm:text-[10px] font-bold border border-blue-500/30 whitespace-nowrap">
-                  Admit Card
+                  Admin Panel
                 </span>
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium hidden md:block">
@@ -71,7 +73,7 @@ export default function Navbar({
             })}
           </nav>
 
-          {/* Quick Header Actions */}
+          {/* Quick Header Actions & Admin Profile */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* 1-Tap Send All Email */}
             <button
@@ -111,6 +113,25 @@ export default function Navbar({
               <Plus className="w-3.5 h-3.5" />
               <span>Add</span>
             </button>
+
+            {/* Logged in Admin Badge & Logout */}
+            <div className="flex items-center gap-1 pl-1 border-l border-slate-800 ml-1">
+              <div
+                className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300"
+                title={`Logged in as ${currentAdmin?.name || 'Admin'} (${currentAdmin?.email})`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="truncate max-w-[110px] font-semibold">{currentAdmin?.name?.split(' ')[0] || 'Admin'}</span>
+              </div>
+
+              <button
+                onClick={onLogout}
+                className="p-1.5 sm:p-2 rounded-xl bg-rose-600/15 hover:bg-rose-600/25 border border-rose-500/30 text-rose-300 transition"
+                title="Logout Admin Session"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 

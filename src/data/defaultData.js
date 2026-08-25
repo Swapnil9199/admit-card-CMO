@@ -1,9 +1,14 @@
+export const DEFAULT_EXAM_CENTRES = [
+  "S.P. College (Sir Parashurambhau College), Tilak Road, Pune"
+];
+
 export const DEFAULT_INSTITUTE_INFO = {
   logoUrl: "/assets/combine_mentor_logo.jpg",
   instituteName: "COMBINE MENTOR OFFICIAL",
   instituteTagline: "Vision of Every Aspirant's",
   instituteAddress: "3rd Floor, Balaji Chambers, Near ABC Chowk, NC Kelkar Road, Pune - 411002",
   examTitle: "MPSC Combine Group B & C Services (गट ब व गट क संयुक्त पूर्व परीक्षा 2026)",
+  examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
   signatoryName: "Umesh V. Kudale",
   signatoryTitle: "HEAD OF EXAM OPERATIONS",
   signatorySubtext: "Rayat Prabodhini / Combine Mentor Official, Pune",
@@ -43,8 +48,8 @@ export const INITIAL_CANDIDATES = [
     phone: "7499696080",
     email: "rushikesh.pawar@example.com",
     examTitle: "गट क - पूर्व परीक्षा 2026",
-    seatNo: "1250042",
-    examCentre: "(11-12) - Ramanbaug, New English School, Pune",
+    seatNo: "9696080",
+    examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
     photoUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&h=240&fit=crop&crop=faces",
     attendanceStatus: "Present",
     verifiedAt: "2026-08-24 10:45 AM"
@@ -56,8 +61,8 @@ export const INITIAL_CANDIDATES = [
     phone: "9823411290",
     email: "priyanka.jadhav@example.com",
     examTitle: "गट ब - पूर्व परीक्षा 2026",
-    seatNo: "1250043",
-    examCentre: "(11-12) - Ramanbaug, New English School, Pune",
+    seatNo: "3411290",
+    examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
     photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=240&fit=crop&crop=faces",
     attendanceStatus: "Not Marked",
     verifiedAt: null
@@ -69,8 +74,8 @@ export const INITIAL_CANDIDATES = [
     phone: "9158347712",
     email: "swapnil.shinde@example.com",
     examTitle: "गट क - पूर्व परीक्षा 2026",
-    seatNo: "1250044",
-    examCentre: "(08-04) - Modern High School, Shivajinagar, Pune",
+    seatNo: "8347712",
+    examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
     photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=240&fit=crop&crop=faces",
     attendanceStatus: "Present",
     verifiedAt: "2026-08-24 10:52 AM"
@@ -82,8 +87,8 @@ export const INITIAL_CANDIDATES = [
     phone: "9421098877",
     email: "snehal.deshmukh@example.com",
     examTitle: "गट ब - पूर्व परीक्षा 2026",
-    seatNo: "1250045",
-    examCentre: "(08-04) - Modern High School, Shivajinagar, Pune",
+    seatNo: "1098877",
+    examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
     photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=240&fit=crop&crop=faces",
     attendanceStatus: "Not Marked",
     verifiedAt: null
@@ -95,8 +100,8 @@ export const INITIAL_CANDIDATES = [
     phone: "9766543210",
     email: "akash.gaikwad@example.com",
     examTitle: "गट क - पूर्व परीक्षा 2026",
-    seatNo: "1250046",
-    examCentre: "(15-09) - Nutan Marathi Vidyalaya (NMV), Pune",
+    seatNo: "6543210",
+    examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
     photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=240&fit=crop&crop=faces",
     attendanceStatus: "Not Marked",
     verifiedAt: null

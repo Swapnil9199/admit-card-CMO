@@ -134,7 +134,7 @@ export function formatCandidateName(name) {
 }
 
 // Parse uploaded CSV in any format and extract Name, Phone, Email
-export function parseAnyCsvFile(file, columnMapping = {}, adminExamTitle = "गट क - पूर्व परीक्षा 2026", adminExamCentre = "(11-12) - Ramanbaug, New English School, Pune") {
+export function parseAnyCsvFile(file, columnMapping = {}, adminExamTitle = "गट क - पूर्व परीक्षा 2026", adminExamCentre = "S.P. College (Sir Parashurambhau College), Tilak Road, Pune") {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       header: true,

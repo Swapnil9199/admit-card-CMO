@@ -4,7 +4,8 @@ import {
   DEFAULT_TIMETABLE,
   DEFAULT_RULES_MARATHI,
   DEFAULT_PROHIBITED_ITEMS,
-  INITIAL_CANDIDATES
+  INITIAL_CANDIDATES,
+  DEFAULT_EXAM_CENTRES
 } from './data/defaultData';
 import Navbar from './components/Navbar';
 import AdmitCard from './components/AdmitCard';
@@ -17,9 +18,11 @@ import AttendanceLogs from './components/AttendanceLogs';
 import BatchPrintModal from './components/BatchPrintModal';
 import BatchEmailModal from './components/BatchEmailModal';
 import SmtpConfigModal from './components/SmtpConfigModal';
+import AuthPortal from './components/AuthPortal';
 import Toast from './components/Toast';
 import { downloadAdmitCardPdf, generateAdmitCardPdfBase64 } from './utils/pdfGenerator';
 import { sendAdmitCardEmail, getSmtpConfig } from './services/emailService';
+import { getCurrentAdmin, logoutAdmin } from './services/authService';
 import {
   Printer,
   Download,
@@ -38,6 +41,15 @@ import {
 import confetti from 'canvas-confetti';
 
 export default function App() {
+  // Admin Authentication Session State
+  const [currentAdmin, setCurrentAdmin] = useState(() => getCurrentAdmin());
+
+  // Exam Centres State (Default: S.P. College Pune)
+  const [examCentres, setExamCentres] = useState(() => {
+    const saved = localStorage.getItem('cm_exam_centres');
+    return saved ? JSON.parse(saved) : DEFAULT_EXAM_CENTRES;
+  });
+
   // LocalStorage-backed state or defaults
   const [candidates, setCandidates] = useState(() => {
     const saved = localStorage.getItem('cm_candidates');
@@ -70,23 +82,29 @@ export default function App() {
     adminEmail: 'admin@combinementor.in'
   });
 
-  // Navigation and UI state
-  const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW', 'CANDIDATES', 'SCANNER', 'LOGS', 'SETTINGS'
-  const [selectedCandidateId, setSelectedCandidateId] = useState(candidates[0]?.id || null);
+  // UI state
+  const [activeTab, setActiveTab] = useState('PREVIEW'); // 'PREVIEW' | 'CANDIDATES' | 'SCANNER' | 'LOGS' | 'SETTINGS'
+  const [selectedCandidateId, setSelectedCandidateId] = useState(() => candidates[0]?.id || null);
 
-  // Modals and Toast state
+  // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isBatchPrintOpen, setIsBatchPrintOpen] = useState(false);
   const [isBatchEmailOpen, setIsBatchEmailOpen] = useState(false);
   const [isSmtpModalOpen, setIsSmtpModalOpen] = useState(false);
+
+  // Action states
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailCandidateTarget, setEmailCandidateTarget] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Sync to localStorage
+  // Selected candidate object
+  const selectedCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
+  const currentCandidateIndex = candidates.findIndex(c => c.id === (selectedCandidate?.id || selectedCandidateId));
+
+  // Sync state changes to LocalStorage
   useEffect(() => {
     localStorage.setItem('cm_candidates', JSON.stringify(candidates));
   }, [candidates]);
@@ -107,64 +125,105 @@ export default function App() {
     localStorage.setItem('cm_prohibited', JSON.stringify(prohibitedItems));
   }, [prohibitedItems]);
 
-  // Load SMTP config on mount
   useEffect(() => {
-    getSmtpConfig().then((res) => {
-      if (res && res.success && res.config) {
-        setAdminSmtpInfo(res.config);
-      }
-    });
+    localStorage.setItem('cm_exam_centres', JSON.stringify(examCentres));
+  }, [examCentres]);
+
+  useEffect(() => {
+    loadSmtpStatus();
   }, []);
 
-  const selectedCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0] || null;
-  const currentCandidateIndex = candidates.findIndex(c => c.id === selectedCandidate?.id);
-
-  // Helper to show notification
-  const showToast = (type, message, recipient = '') => {
-    setToast({ type, message, recipient });
-    setTimeout(() => {
-      setToast((prev) => (prev?.message === message ? null : prev));
-    }, 6000);
+  const loadSmtpStatus = async () => {
+    const res = await getSmtpConfig();
+    if (res.success && res.config) {
+      setAdminSmtpInfo({
+        adminName: res.config.adminName || 'Combine Mentor Official',
+        adminEmail: res.config.adminEmail || ''
+      });
+    }
   };
 
-  // Automated & Manual Email Dispatch
-  const dispatchAdmitCardEmail = async (candidateObj) => {
-    if (!candidateObj) return;
+  const showToast = (type, message, details = '') => {
+    setToast({ type, message, details });
+  };
 
-    if (!candidateObj.email) {
-      showToast('error', 'Admit card generated successfully, but we could not send it to the email address. Please try again.', 'No email address registered');
+  // Add new exam centre handler
+  const handleAddExamCentre = (newCentre) => {
+    if (!newCentre || !newCentre.trim()) return;
+    const clean = newCentre.trim();
+    if (!examCentres.includes(clean)) {
+      const updated = [...examCentres, clean];
+      setExamCentres(updated);
+      localStorage.setItem('cm_exam_centres', JSON.stringify(updated));
+      showToast('success', `Added new exam centre: ${clean}`);
+    }
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to log out of the Admin Dashboard?")) {
+      logoutAdmin();
+      setCurrentAdmin(null);
+      showToast('info', 'Logged out successfully.');
+    }
+  };
+
+  // Download PDF handler
+  const handleDownloadSinglePdf = async (candidateObj) => {
+    if (!candidateObj) return;
+    setIsDownloadingPdf(true);
+    try {
+      const filename = `AdmitCard_${candidateObj.seatNo || candidateObj.name.replace(/\s+/g, '_')}.pdf`;
+      await downloadAdmitCardPdf('admit-card-live-preview', filename);
+      showToast('success', 'Admit Card downloaded successfully!', filename);
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'Failed to generate PDF. Please try again.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
+  // Print Single Hall Ticket handler
+  const handlePrintSingle = (candidateObj) => {
+    if (!candidateObj) return;
+    setSelectedCandidateId(candidateObj.id);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  // Email Admit Card to Candidate (Explicit Admin Action)
+  const dispatchAdmitCardEmail = async (candidateObj) => {
+    if (!candidateObj || !candidateObj.email) {
+      showToast('error', 'Candidate does not have a valid email address configured.');
       return;
     }
 
     setIsSendingEmail(true);
     setEmailCandidateTarget(candidateObj);
 
-    // Give react time to render the offscreen card
-    await new Promise(resolve => setTimeout(resolve, 200));
-
     try {
-      // Generate PDF base64 from the offscreen admit card container
-      const { pdfBase64, filename } = await generateAdmitCardPdfBase64('admit-card-email-render', candidateObj.name);
+      await new Promise(r => setTimeout(r, 350));
+      const pdfBase64 = await generateAdmitCardPdfBase64('admit-card-email-render');
 
-      const result = await sendAdmitCardEmail({
+      const response = await sendAdmitCardEmail({
         recipientEmail: candidateObj.email,
-        recipientName: candidateObj.name,
-        seatNo: candidateObj.seatNo,
+        candidateName: candidateObj.name,
         examTitle: candidateObj.examTitle || instituteInfo.examTitle,
-        examCentre: candidateObj.examCentre,
-        pdfBase64,
-        filename
+        seatNo: candidateObj.seatNo,
+        pdfBase64: pdfBase64
       });
 
-      if (result.success) {
-        showToast('success', 'Admit card generated successfully and sent to your email.', candidateObj.email);
+      if (response.success) {
         confetti({
-          particleCount: 60,
-          spread: 50,
+          particleCount: 50,
+          spread: 60,
           origin: { y: 0.7 }
         });
+        showToast('success', 'Admit card generated & sent to candidate email!', candidateObj.email);
       } else {
-        showToast('error', 'Admit card generated successfully, but we could not send it to the email address. Please try again.', candidateObj.email);
+        showToast('error', 'Admit card generated successfully, but we could not send it to the email address. Please check SMTP settings.', candidateObj.email);
       }
     } catch (err) {
       console.error("Admit Card Email Generation Error:", err);
@@ -226,75 +285,80 @@ export default function App() {
       spread: 70,
       origin: { y: 0.6 }
     });
+    showToast('success', `Successfully imported ${importedList.length} candidates.`);
   };
 
-  // Attendance marking
-  const handleMarkAttendance = (candidateId, status = 'Present') => {
-    const nowStr = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }) + ' ' + new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
+  // Attendance Operations
+  const handleMarkAttendance = (id, newStatus = 'Present') => {
+    const now = new Date();
+    const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    setCandidates(candidates.map(c => {
-      if (c.id === candidateId) {
+    const updated = candidates.map(c => {
+      if (c.id === id) {
         return {
           ...c,
-          attendanceStatus: status,
-          verifiedAt: status === 'Present' ? nowStr : null
+          attendanceStatus: newStatus,
+          verifiedAt: newStatus === 'Present' ? timeStr : null
         };
       }
       return c;
-    }));
+    });
+
+    setCandidates(updated);
   };
 
   const handleResetAllAttendance = () => {
-    if (window.confirm("Are you sure you want to reset all candidate attendance logs?")) {
-      setCandidates(candidates.map(c => ({ ...c, attendanceStatus: 'Not Marked', verifiedAt: null })));
+    if (window.confirm("Are you sure you want to reset attendance for all candidates to 'Not Marked'?")) {
+      const updated = candidates.map(c => ({
+        ...c,
+        attendanceStatus: 'Not Marked',
+        verifiedAt: null
+      }));
+      setCandidates(updated);
+      showToast('info', 'All candidate attendance statuses have been reset.');
     }
-  };
-
-  // PDF & Print Actions
-  const handleDownloadSinglePdf = async (candidateObj) => {
-    const target = candidateObj || selectedCandidate;
-    if (!target) return;
-    setIsDownloadingPdf(true);
-    try {
-      await downloadAdmitCardPdf('admit-card-live-preview', target.name);
-    } catch (err) {
-      console.error(err);
-      alert(`Error generating PDF: ${err.message || 'Unknown error'}`);
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
-
-  const handlePrintSingle = (candidateObj) => {
-    if (candidateObj && candidateObj.id !== selectedCandidateId) {
-      setSelectedCandidateId(candidateObj.id);
-    }
-    setTimeout(() => {
-      window.print();
-    }, 150);
   };
 
   const presentCount = candidates.filter(c => c.attendanceStatus === 'Present').length;
 
-  return (
-    <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-      {/* Toast Notification Alert */}
-      <Toast toast={toast} onClose={() => setToast(null)} />
+  // ================= ADMIN SECURITY GUARD =================
+  // If no admin is logged in, show the Admin Authentication Portal exclusively
+  if (!currentAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 antialiased font-sans">
+        <AuthPortal onLoginSuccess={(adminUser) => setCurrentAdmin(adminUser)} />
+        {toast && (
+          <Toast
+            type={toast.type}
+            message={toast.message}
+            details={toast.details}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </div>
+    );
+  }
 
-      {/* Top Navigation */}
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 antialiased font-sans flex flex-col selection:bg-blue-600 selection:text-white">
+      {/* Toast Notification Alert */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          details={toast.details}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         candidateCount={candidates.length}
         presentCount={presentCount}
+        currentAdmin={currentAdmin}
+        onLogout={handleLogout}
         onOpenAddModal={() => {
           setEditingCandidate(null);
           setIsAddModalOpen(true);
@@ -305,14 +369,14 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* ================= TAB 1: ADMIT CARD LIVE PREVIEW ================= */}
         {activeTab === 'PREVIEW' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Candidate Selector Ribbon */}
-            <div className="no-print p-4 rounded-2xl glass-panel flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-3xl glass-panel">
               {/* Candidate Switcher */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   disabled={currentCandidateIndex <= 0}
                   onClick={() => setSelectedCandidateId(candidates[currentCandidateIndex - 1]?.id)}
@@ -333,7 +397,7 @@ export default function App() {
                       <select
                         value={selectedCandidate?.id || ''}
                         onChange={(e) => setSelectedCandidateId(e.target.value)}
-                        className="font-bold text-sm bg-slate-900 border border-slate-700 text-white rounded-lg px-2.5 py-1 focus:outline-none focus:border-blue-500 cursor-pointer"
+                        className="font-bold text-xs sm:text-sm bg-slate-900 border border-slate-700 text-white rounded-lg px-2.5 py-1 focus:outline-none focus:border-blue-500 cursor-pointer max-w-[200px] sm:max-w-xs truncate"
                       >
                         {candidates.map((c, idx) => (
                           <option key={c.id} value={c.id}>
@@ -342,12 +406,12 @@ export default function App() {
                         ))}
                       </select>
 
-                      <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono text-xs font-semibold">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono text-xs font-semibold shrink-0">
                         Seat: {selectedCandidate?.seatNo}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5 font-mono">
-                      Email: {selectedCandidate?.email || 'N/A'} • UID: {selectedCandidate?.uniqueCode || selectedCandidate?.id}
+                    <p className="text-[11px] text-slate-400 mt-0.5 font-mono truncate max-w-xs sm:max-w-md">
+                      Email: {selectedCandidate?.email || 'N/A'} • Centre: {selectedCandidate?.examCentre || 'S.P. College Pune'}
                     </p>
                   </div>
                 </div>
@@ -503,6 +567,8 @@ export default function App() {
             setProhibitedItems={setProhibitedItems}
             candidates={candidates}
             setCandidates={setCandidates}
+            examCentres={examCentres}
+            setExamCentres={setExamCentres}
             onOpenSmtpModal={() => setIsSmtpModalOpen(true)}
             onGoToPreview={() => setActiveTab('PREVIEW')}
           />
@@ -530,6 +596,8 @@ export default function App() {
         }}
         onSave={handleSaveCandidate}
         candidate={editingCandidate}
+        examCentres={examCentres}
+        onAddExamCentre={handleAddExamCentre}
       />
 
       {/* Bulk CSV Import Modal */}
@@ -538,6 +606,8 @@ export default function App() {
         onClose={() => setIsBulkImportOpen(false)}
         onImport={handleBulkImport}
         defaultExamTitle={instituteInfo.examTitle}
+        examCentres={examCentres}
+        onAddExamCentre={handleAddExamCentre}
       />
 
       {/* Batch Print All Modal */}
