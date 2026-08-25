@@ -363,33 +363,33 @@ export default function App() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
                 {/* 1-Tap Email All Button */}
                 <button
                   onClick={() => setIsBatchEmailOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold transition"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold transition"
                   title="Send all admit cards to all candidates in one tap"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  1-Tap Email All ({candidates.length})
+                  <span className="truncate">Email All ({candidates.length})</span>
                 </button>
 
                 {/* Email Single Admit Card Button */}
                 <button
                   disabled={isSendingEmail}
                   onClick={() => dispatchAdmitCardEmail(selectedCandidate)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition transform hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 transition transform hover:-translate-y-0.5"
                   title="Send Admit Card PDF directly to student email"
                 >
                   {isSendingEmail ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Sending Email...
+                      <span className="truncate">Sending...</span>
                     </>
                   ) : (
                     <>
                       <Mail className="w-3.5 h-3.5" />
-                      Email Admit Card
+                      <span className="truncate">Email Admit</span>
                     </>
                   )}
                 </button>
@@ -397,39 +397,39 @@ export default function App() {
                 {/* Attendance Quick Toggle */}
                 <button
                   onClick={() => handleMarkAttendance(selectedCandidate?.id, selectedCandidate?.attendanceStatus === 'Present' ? 'Not Marked' : 'Present')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
                     selectedCandidate?.attendanceStatus === 'Present'
                       ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                   }`}
                 >
                   <UserCheck className="w-3.5 h-3.5" />
-                  {selectedCandidate?.attendanceStatus === 'Present' ? 'Present ✓' : 'Mark Present'}
+                  <span className="truncate">{selectedCandidate?.attendanceStatus === 'Present' ? 'Present ✓' : 'Mark Present'}</span>
                 </button>
 
                 {/* Print Single */}
                 <button
                   onClick={() => handlePrintSingle(selectedCandidate)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  Print Hall Ticket
+                  <span className="truncate">Print</span>
                 </button>
 
                 {/* Download PDF */}
                 <button
                   disabled={isDownloadingPdf}
                   onClick={() => handleDownloadSinglePdf(selectedCandidate)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
+                  className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  {isDownloadingPdf ? 'Generating PDF...' : 'Download 2-Page PDF'}
+                  <span className="truncate">{isDownloadingPdf ? 'Generating PDF...' : 'Download 2-Page PDF'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Live Admit Card Document View */}
-            <div className="flex justify-center p-2 sm:p-4 bg-slate-900/40 rounded-3xl border border-slate-800/80 shadow-2xl">
+            {/* Live Admit Card Document View (Scrollable on mobile without layout overflow) */}
+            <div className="flex justify-center p-2 sm:p-4 bg-slate-900/40 rounded-3xl border border-slate-800/80 shadow-2xl overflow-x-auto w-full touch-pan-x">
               <AdmitCard
                 id="admit-card-live-preview"
                 candidate={selectedCandidate}

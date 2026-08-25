@@ -141,20 +141,20 @@ export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl sm:rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-800/40 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400">
-              <Mail className="w-5 h-5" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800 bg-slate-800/40 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-blue-500/20 text-blue-400">
+              <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">
-                Admin SMTP & Email Dispatch Settings
+              <h3 className="font-bold text-base sm:text-lg text-white">
+                Admin SMTP & Email Configuration
               </h3>
-              <p className="text-xs text-slate-400">
-                Configure your Admin email account to send admit cards directly to candidates
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                Setup your official admin email account to send Admit Cards
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+        <form onSubmit={handleSave} className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1 text-xs">
           {/* Quick Preset Selector */}
           <div>
             <label className="block font-bold text-slate-300 uppercase tracking-wider mb-2">

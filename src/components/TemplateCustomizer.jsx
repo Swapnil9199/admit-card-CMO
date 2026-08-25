@@ -276,7 +276,7 @@ export default function TemplateCustomizer({
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex border-b border-slate-800 gap-2 overflow-x-auto">
+      <div className="flex border-b border-slate-800 gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar touch-pan-x">
         <button
           onClick={() => setActiveSubTab('INSTITUTE')}
           className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${

@@ -20,7 +20,8 @@ import {
   MinusSquare,
   AlertTriangle,
   UserCheck,
-  UserX
+  UserX,
+  ExternalLink
 } from 'lucide-react';
 import { exportCandidatesToCsv } from '../utils/csvHelper';
 
@@ -101,25 +102,25 @@ export default function CandidateList({
   return (
     <div className="space-y-4">
       {/* Search & Actions Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-2xl glass-panel">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-3xl glass-panel">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by Name, Mobile, Email, Seat No, UID..."
+              placeholder="Search Name, Phone, Email, Seat No..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-xl glass-input text-xs sm:text-sm"
             />
           </div>
 
-          {/* Filter Status */}
-          <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs">
+          {/* Filter Status Pills */}
+          <div className="flex items-center overflow-x-auto gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-800 text-xs shrink-0 no-scrollbar">
             <button
               onClick={() => setFilterStatus('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition ${
                 filterStatus === 'ALL'
                   ? 'bg-blue-600 text-white font-semibold shadow'
                   : 'text-slate-400 hover:text-slate-200'
@@ -129,7 +130,7 @@ export default function CandidateList({
             </button>
             <button
               onClick={() => setFilterStatus('PRESENT')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition ${
                 filterStatus === 'PRESENT'
                   ? 'bg-emerald-600 text-white font-semibold shadow'
                   : 'text-slate-400 hover:text-slate-200'
@@ -139,7 +140,7 @@ export default function CandidateList({
             </button>
             <button
               onClick={() => setFilterStatus('NOT_MARKED')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition ${
                 filterStatus === 'NOT_MARKED'
                   ? 'bg-amber-600 text-white font-semibold shadow'
                   : 'text-slate-400 hover:text-slate-200'
@@ -150,86 +151,88 @@ export default function CandidateList({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Action Buttons Bar */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 lg:pt-0 border-t lg:border-t-0 border-slate-800/80">
           <button
             onClick={() => exportCandidatesToCsv(candidates)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition"
             title="Export full list to CSV"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
           </button>
 
           <button
             onClick={onOpenBulkImport}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-xs font-semibold transition"
+            title="Import multiple candidates via CSV"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            Bulk CSV Import
+            <span>Bulk CSV</span>
           </button>
 
           <button
             onClick={onOpenBatchEmail}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition shadow-sm"
-            title="Send all admit cards via email in one tap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition shadow-sm"
+            title="1-Tap Email Admit Cards to All Students"
           >
             <Send className="w-3.5 h-3.5" />
-            1-Tap Email All
+            <span>Email All</span>
           </button>
 
           <button
             onClick={onOpenBatchPrint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-semibold transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-xs font-semibold transition"
+            title="Batch Print All Hall Tickets"
           >
             <Printer className="w-3.5 h-3.5" />
-            Batch Print All
+            <span className="hidden sm:inline">Batch Print</span>
           </button>
 
           <button
             onClick={onAddCandidate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition transform hover:-translate-y-0.5"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            Add Candidate
+            <span>Add Student</span>
           </button>
         </div>
       </div>
 
-      {/* Batch Selected Actions Ribbon (Appears when 1 or more candidates are checked) */}
+      {/* Dynamic Multi-Selection Batch Actions Ribbon */}
       {selectedIds.length > 0 && (
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-950/60 via-slate-900 to-indigo-950/60 border border-rose-500/40 shadow-xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn text-xs">
-          <div className="flex items-center gap-2 text-white font-bold">
-            <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-mono">
+        <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/80 to-slate-900 border border-indigo-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-xl bg-indigo-500 text-white font-bold text-xs flex items-center justify-center shadow">
               {selectedIds.length}
             </span>
-            <span>Candidate(s) Selected</span>
+            <div className="text-xs text-indigo-200 font-semibold">
+              <span>{selectedIds.length} Candidate{selectedIds.length > 1 ? 's' : ''} Selected</span>
+              <span className="text-slate-400 text-[11px] ml-2 hidden sm:inline">(Manage selected students at once)</span>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Delete Multiple Button */}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+            >
+              Deselect All
+            </button>
+
             <button
               onClick={handleDeleteSelected}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-md shadow-rose-600/30 transition transform hover:-translate-y-0.5"
-              title="Delete all selected candidates at once"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/30 transition transform hover:-translate-y-0.5"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete Selected ({selectedIds.length})
-            </button>
-
-            {/* Deselect All */}
-            <button
-              onClick={() => setSelectedIds([])}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold border border-slate-700 transition"
-            >
-              Deselect All
             </button>
           </div>
         </div>
       )}
 
-      {/* Candidates Table */}
-      <div className="rounded-2xl glass-panel overflow-hidden border border-slate-800/80">
+      {/* ================= DESKTOP TABLE VIEW (md and up) ================= */}
+      <div className="hidden md:block rounded-3xl glass-panel overflow-hidden border border-slate-800 shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
@@ -239,7 +242,7 @@ export default function CandidateList({
                   <button
                     onClick={handleToggleSelectAll}
                     className="text-slate-400 hover:text-white transition"
-                    title={isAllSelected ? 'Deselect All' : 'Select All'}
+                    title={isAllSelected ? "Deselect All" : "Select All"}
                   >
                     {isAllSelected ? (
                       <CheckSquare className="w-4 h-4 text-blue-400" />
@@ -250,15 +253,15 @@ export default function CandidateList({
                     )}
                   </button>
                 </th>
-                <th className="p-3.5">Candidate Details</th>
+                <th className="p-3.5">Candidate Name</th>
                 <th className="p-3.5">Contact Details (Mobile & Email)</th>
-                <th className="p-3.5">Seat No & Exam Centre</th>
-                <th className="p-3.5">Unique QR Code</th>
+                <th className="p-3.5">Seat No & Centre</th>
+                <th className="p-3.5">Unique QR UID</th>
                 <th className="p-3.5 text-center">Attendance</th>
-                <th className="p-3.5 text-right">Admit Card Actions</th>
+                <th className="p-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 bg-slate-950/30">
+            <tbody className="divide-y divide-slate-800 bg-slate-950/40">
               {filteredCandidates.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-500">
@@ -266,7 +269,7 @@ export default function CandidateList({
                   </td>
                 </tr>
               ) : (
-                filteredCandidates.map((c, idx) => {
+                filteredCandidates.map((c) => {
                   const isSelected = selectedIds.includes(c.id);
                   const isRowActive = selectedCandidate?.id === c.id;
 
@@ -317,39 +320,37 @@ export default function CandidateList({
                         </div>
                       </td>
 
-                      {/* Contact Details (Phone & Email Prominently Displayed) */}
+                      {/* Contact Details */}
                       <td className="p-3.5 space-y-1">
-                        {/* Phone Number */}
                         <div className="flex items-center gap-2 text-slate-200">
                           <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <span className="font-mono font-bold text-emerald-300">
-                            {c.phone || 'N/A'}
+                            {c.phone || "N/A"}
                           </span>
                         </div>
-
-                        {/* Email Address */}
-                        <div className="flex items-center gap-2 text-slate-300">
+                        <div className="flex items-center gap-2 text-slate-400">
                           <Mail className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                          <span className="truncate max-w-[180px] font-mono text-[11px]">
-                            {c.email || 'N/A'}
+                          <span className="text-[11px] truncate max-w-[200px]" title={c.email}>
+                            {c.email || "N/A"}
                           </span>
                         </div>
                       </td>
 
                       {/* Seat No & Exam Centre */}
-                      <td className="p-3.5 space-y-0.5">
-                        <div className="font-mono font-bold text-blue-400 flex items-center gap-1 text-xs">
-                          <Hash className="w-3.5 h-3.5" />
-                          Seat: {c.seatNo}
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                            # Seat: {c.seatNo}
+                          </span>
                         </div>
-                        <div className="text-[11px] text-slate-400 truncate max-w-[200px]" title={c.examCentre}>
-                          {c.examCentre}
+                        <div className="text-[11px] text-slate-400 mt-1 truncate max-w-[180px]" title={c.examCentre}>
+                          {c.examCentre || "(11-12) - Ramanbaug, Pune"}
                         </div>
                       </td>
 
                       {/* Unique Code */}
-                      <td className="p-3.5 font-mono text-purple-300">
-                        <span className="px-2 py-0.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[11px]">
+                      <td className="p-3.5 font-mono text-[11px] text-purple-300">
+                        <span className="bg-purple-950/40 px-2 py-1 rounded border border-purple-800/40">
                           {c.uniqueCode || c.id}
                         </span>
                       </td>
@@ -377,7 +378,7 @@ export default function CandidateList({
                         </span>
                       </td>
 
-                      {/* Admit Card Actions */}
+                      {/* Actions */}
                       <td className="p-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Live Preview */}
@@ -410,7 +411,11 @@ export default function CandidateList({
 
                           {/* Delete Single Candidate */}
                           <button
-                            onClick={() => onDeleteCandidate(c.id)}
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete ${c.name}?`)) {
+                                onDeleteCandidate(c.id);
+                              }
+                            }}
                             className="p-1.5 rounded-lg hover:bg-rose-600/20 text-slate-400 hover:text-rose-400 transition"
                             title="Delete Candidate"
                           >
@@ -425,6 +430,139 @@ export default function CandidateList({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* ================= MOBILE CARDS VIEW (under md) ================= */}
+      <div className="md:hidden space-y-3">
+        {filteredCandidates.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 rounded-2xl glass-panel">
+            No candidates match your search filter.
+          </div>
+        ) : (
+          filteredCandidates.map((c) => {
+            const isSelected = selectedIds.includes(c.id);
+            const isPresent = c.attendanceStatus === 'Present';
+
+            return (
+              <div
+                key={c.id}
+                className={`p-4 rounded-2xl glass-panel space-y-3 transition border ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-600/10'
+                    : 'border-slate-800'
+                }`}
+              >
+                {/* Top Row: Checkbox, Avatar, Name & Seat No */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleToggleSelectRow(c.id)}
+                      className="text-slate-500 hover:text-blue-400 transition p-1"
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-blue-400" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                    <img
+                      src={
+                        c.photoUrl ||
+                        `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(c.name)}`
+                      }
+                      alt={c.name}
+                      className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                    />
+                    <div>
+                      <h4 className="font-bold text-white text-xs">{c.name}</h4>
+                      <p className="text-[11px] text-slate-400">{c.examTitle || 'गट क - पूर्व परीक्षा 2026'}</p>
+                    </div>
+                  </div>
+
+                  <span className="font-mono font-bold text-blue-400 text-xs bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 shrink-0">
+                    #{c.seatNo}
+                  </span>
+                </div>
+
+                {/* Contact Info (Clickable Phone & Email for Mobile) */}
+                <div className="grid grid-cols-1 gap-1.5 pt-2 border-t border-slate-800/80 text-xs">
+                  <a
+                    href={`tel:${c.phone}`}
+                    className="flex items-center gap-2 text-emerald-300 font-mono font-bold hover:underline"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{c.phone || "No phone"}</span>
+                  </a>
+
+                  <a
+                    href={`mailto:${c.email}`}
+                    className="flex items-center gap-2 text-slate-300 font-mono text-[11px] truncate hover:underline"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                    <span className="truncate">{c.email || "No email"}</span>
+                  </a>
+                </div>
+
+                {/* Exam Centre & Status */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-[11px]">
+                  <span className="text-slate-400 truncate max-w-[180px]">
+                    {c.examCentre || "(11-12) - Ramanbaug, Pune"}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold shrink-0 ${
+                      isPresent
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    }`}
+                  >
+                    {isPresent ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                    {isPresent ? 'Present' : 'Pending'}
+                  </span>
+                </div>
+
+                {/* Mobile Action Buttons Bar */}
+                <div className="flex items-center justify-between gap-1 pt-3 border-t border-slate-800">
+                  <button
+                    onClick={() => onSelectCandidate(c)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-semibold text-xs transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View Hall Ticket</span>
+                  </button>
+
+                  <button
+                    disabled={emailingId === c.id}
+                    onClick={() => handleEmailClick(c)}
+                    className="p-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 transition disabled:opacity-50"
+                    title="Email Admit Card"
+                  >
+                    <Mail className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => onEditCandidate(c)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                    title="Edit Candidate"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete ${c.name}?`)) {
+                        onDeleteCandidate(c.id);
+                      }
+                    }}
+                    className="p-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 transition"
+                    title="Delete Candidate"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
