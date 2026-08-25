@@ -14,14 +14,14 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
   const qrCodeValue = candidate.uniqueCode || (candidate.seatNo ? `CM-MPSC-${candidate.seatNo}` : candidate.id);
 
   return (
-    <div id={id} className="admit-card-container flex flex-col gap-8 w-full max-w-[820px] mx-auto text-slate-900 select-text">
+    <div id={id} className="admit-card-container flex flex-col gap-8 w-[760px] min-w-[760px] max-w-[794px] mx-auto text-slate-900 select-text shrink-0">
       {/* ================= PAGE 1: HALL TICKET ================= */}
-      <div className="admit-card-page bg-white p-7 sm:p-9 border-2 border-slate-900 shadow-2xl relative w-full aspect-[1/1.414] flex flex-col justify-between overflow-hidden">
+      <div className="admit-card-page bg-white p-7 sm:p-9 border-2 border-slate-900 shadow-2xl relative w-[760px] min-w-[760px] aspect-[1/1.414] flex flex-col justify-between overflow-hidden shrink-0">
         <div>
           {/* Header Section */}
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4 mb-4">
+          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4 mb-4 gap-2">
             {/* Institute Logo */}
-            <div className="flex items-center gap-3 w-1/4">
+            <div className="flex items-center gap-2 shrink-0 w-24">
               <div className="w-20 h-20 border border-slate-300 rounded p-1 flex items-center justify-center bg-white shadow-sm overflow-hidden">
                 <img
                   src={instituteInfo?.logoUrl || "/assets/combine_mentor_logo.jpg"}
@@ -36,7 +36,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
             </div>
 
             {/* Institute Name & Address */}
-            <div className="text-center flex-1 px-3">
+            <div className="text-center flex-1 px-2">
               <h1 className="text-xl sm:text-2xl font-black tracking-wider text-slate-950 uppercase font-sans">
                 {instituteInfo?.instituteName || "COMBINE MENTOR OFFICIAL"}
               </h1>
@@ -51,11 +51,11 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
             </div>
 
             {/* QR Code */}
-            <div className="w-1/4 flex flex-col items-end">
+            <div className="shrink-0 w-28 flex flex-col items-end">
               <div className="p-1 border-2 border-slate-900 rounded bg-white shadow-sm flex flex-col items-center">
                 <QRCodeSVG
                   value={qrCodeValue}
-                  size={92}
+                  size={88}
                   level="M"
                   includeMargin={true}
                 />
@@ -74,7 +74,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
               </h2>
             </div>
             <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1.5 tracking-wide">
-              {candidate.examTitle || instituteInfo?.examTitle || "MPSC Combine Group B & C Services"}
+              {candidate.examTitle || instituteInfo?.examTitle || "MPSC Combine Group B & C Services (गट ब व गट क संयुक्त पूर्व परीक्षा 2026)"}
             </p>
           </div>
 
@@ -88,26 +88,26 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
               <table className="flex-1 text-xs border-collapse border border-slate-900">
                 <tbody>
                   <tr className="border-b border-slate-900">
-                    <td className="w-36 bg-slate-100/90 font-bold p-2 text-slate-900 border-r border-slate-900">
+                    <td className="w-1/3 bg-slate-100/90 font-bold p-2 text-slate-900 border-r border-slate-900">
                       Candidate Name:
                     </td>
-                    <td className="p-2 font-bold text-slate-950 uppercase tracking-wide">
+                    <td className="p-2 font-extrabold text-sm uppercase text-slate-950">
                       {candidate.name}
                     </td>
                   </tr>
                   <tr className="border-b border-slate-900">
                     <td className="bg-slate-100/90 font-bold p-2 text-slate-900 border-r border-slate-900">
-                      Contact / Mobile No:
+                      Mobile Number:
                     </td>
-                    <td className="p-2 font-bold text-slate-950 font-mono text-xs">
+                    <td className="p-2 font-mono font-bold text-slate-900">
                       {candidate.phone || "N/A"}
                     </td>
                   </tr>
                   <tr className="border-b border-slate-900">
                     <td className="bg-slate-100/90 font-bold p-2 text-slate-900 border-r border-slate-900">
-                      Candidate Email ID:
+                      Email Address:
                     </td>
-                    <td className="p-2 font-semibold text-slate-900 text-xs">
+                    <td className="p-2 font-mono text-[11px] text-slate-800">
                       {candidate.email || "N/A"}
                     </td>
                   </tr>
@@ -160,18 +160,18 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
           {/* Examination Details Section */}
           <div className="mt-4">
             <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-950 mb-1.5">
-              Examination Details
+              EXAMINATION VENUE & SEAT NO
             </h3>
             <table className="w-full text-xs border-collapse border border-slate-900 text-center">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-900 text-slate-900 font-bold">
-                  <th className="p-2 w-1/3 border-r border-slate-900">Exam Seat No</th>
-                  <th className="p-2 text-left pl-4">Exam Centre</th>
+                <tr className="bg-slate-950 text-white font-bold">
+                  <th className="p-2 border-r border-slate-700 w-1/3">SEAT NUMBER (७ अंकी आसन क्रमांक)</th>
+                  <th className="p-2">EXAMINATION CENTRE / VENUE</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="p-2.5 font-bold font-mono text-sm border-r border-slate-900 text-slate-950">
+                <tr className="border-t border-slate-900">
+                  <td className="p-2.5 font-mono text-base font-black tracking-widest text-blue-950 border-r border-slate-900 bg-slate-50">
                     {candidate.seatNo || "1250042"}
                   </td>
                   <td className="p-2.5 text-left pl-4 font-semibold text-slate-900">
@@ -182,39 +182,35 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
             </table>
           </div>
 
-          {/* Examination Timetable Section */}
+          {/* Timetable Section */}
           <div className="mt-4">
             <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-950 mb-1.5">
-              Examination Timetable
+              TEST SCHEDULE (वेळापत्रक)
             </h3>
-            <table className="w-full text-[11px] sm:text-xs border-collapse border border-slate-900">
+            <table className="w-full text-xs border-collapse border border-slate-900">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-900 text-slate-950 font-bold">
-                  <th className="p-2 text-left border-r border-slate-900">SUBJECT</th>
-                  <th className="p-2 text-center w-28 border-r border-slate-900">DATE</th>
-                  <th className="p-2 text-center w-40">TIME</th>
+                <tr className="bg-slate-900 text-white font-bold">
+                  <th className="p-1.5 border-r border-slate-700 w-12 text-center">Sr.</th>
+                  <th className="p-1.5 border-r border-slate-700 text-left pl-3">Paper / Subject Name</th>
+                  <th className="p-1.5 border-r border-slate-700 w-28 text-center">Exam Date</th>
+                  <th className="p-1.5 w-36 text-center">Timing</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-800">
                 {(timetable && timetable.length > 0 ? timetable : [
-                  { id: 1, subject: "Comprehensive Test 1", date: "23-08-2026", time: "11:00 AM - 12:00 PM" },
-                  { id: 2, subject: "Comprehensive Test 2", date: "30-08-2026", time: "11:00 AM - 12:00 PM" },
-                  { id: 3, subject: "Comprehensive Test 3", date: "06-09-2026", time: "11:00 AM - 12:00 PM" },
-                  { id: 4, subject: "Comprehensive Test 4", date: "14-09-2026", time: "11:00 AM - 12:00 PM" },
-                  { id: 5, subject: "Comprehensive Test 5", date: "27-09-2026", time: "11:00 AM - 12:00 PM" },
-                  { id: 6, subject: "Comprehensive Test 6", date: "04-10-2026", time: "11:00 AM - 12:00 PM" },
-                  { id: 7, subject: "Comprehensive Test 7", date: "11-10-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 1, subject: "Comprehensive Test 1 (General Studies & CSAT)", date: "23-08-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 2, subject: "Comprehensive Test 2 (History & Polity)", date: "30-08-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 3, subject: "Comprehensive Test 3 (Geography & Agriculture)", date: "06-09-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 4, subject: "Comprehensive Test 4 (Economy & Planning)", date: "14-09-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 5, subject: "Comprehensive Test 5 (General Science & Tech)", date: "27-09-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 6, subject: "Comprehensive Test 6 (Current Affairs & Aptitude)", date: "04-10-2026", time: "11:00 AM - 12:00 PM" },
+                  { id: 7, subject: "Comprehensive Test 7 (Full Length Mock Exam)", date: "11-10-2026", time: "11:00 AM - 12:00 PM" }
                 ]).map((row, idx) => (
-                  <tr key={idx} className="border-b border-slate-300 hover:bg-slate-50/50">
-                    <td className="p-1.5 font-medium border-r border-slate-300 pl-3">
-                      {row.subject}
-                    </td>
-                    <td className="p-1.5 text-center font-mono font-medium border-r border-slate-300">
-                      {row.date}
-                    </td>
-                    <td className="p-1.5 text-center font-mono font-medium">
-                      {row.time}
-                    </td>
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                    <td className="p-1.5 text-center font-bold border-r border-slate-900">{idx + 1}</td>
+                    <td className="p-1.5 pl-3 font-medium border-r border-slate-900 text-slate-900">{row.subject}</td>
+                    <td className="p-1.5 text-center font-mono font-semibold border-r border-slate-900">{row.date}</td>
+                    <td className="p-1.5 text-center font-mono text-[11px]">{row.time}</td>
                   </tr>
                 ))}
               </tbody>
@@ -222,18 +218,16 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
           </div>
         </div>
 
-        {/* Footer with Stamp & Signatory */}
-        <div className="flex items-end justify-between pt-6 border-t border-slate-300 mt-4">
-          {/* Official Stamp */}
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-full border-2 border-purple-800 flex flex-col items-center justify-center p-1 text-center text-purple-900 shadow-inner bg-purple-50/40 relative">
-              <span className="text-[7px] font-black tracking-tighter uppercase">COMBINE MENTOR</span>
-              <span className="text-[6px] font-bold">★ SEAL ★</span>
-              <span className="text-[7px] font-black">PUNE</span>
+        {/* Page 1 Footer Signatures */}
+        <div className="border-t-2 border-slate-900 pt-4 mt-4 flex items-end justify-between">
+          {/* Candidate Signature Box */}
+          <div className="text-center">
+            <div className="w-40 h-10 border-b border-slate-900 mb-1 flex items-end justify-center pb-1">
+              <span className="text-[10px] text-slate-400 italic">Candidate Sign at Venue</span>
             </div>
-            <div className="text-[10px] text-slate-500 font-medium italic">
-              Official Examination Stamp
-            </div>
+            <p className="text-[11px] font-bold text-slate-900">
+              Signature of Candidate
+            </p>
           </div>
 
           {/* Signatory Authority */}
@@ -254,7 +248,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
       </div>
 
       {/* ================= PAGE 2: RULES & REGULATIONS ================= */}
-      <div className="admit-card-page bg-white p-7 sm:p-9 border-2 border-slate-900 shadow-2xl relative w-full aspect-[1/1.414] flex flex-col justify-between overflow-hidden">
+      <div className="admit-card-page bg-white p-7 sm:p-9 border-2 border-slate-900 shadow-2xl relative w-[760px] min-w-[760px] aspect-[1/1.414] flex flex-col justify-between overflow-hidden shrink-0">
         <div>
           {/* Page 2 Title */}
           <div className="border-b-2 border-slate-900 pb-2 mb-4">
