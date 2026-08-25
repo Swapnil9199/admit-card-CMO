@@ -211,8 +211,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
 
           {/* Camera View Box */}
           {isCameraActive ? (
-            <div className="bg-slate-950 rounded-2xl border-2 border-dashed border-blue-500/50 p-3 overflow-hidden">
-              <div id="qr-reader" className="w-full text-slate-900 rounded-xl overflow-hidden" />
+            <div className="bg-slate-950 rounded-2xl border-2 border-blue-500/40 p-3 overflow-hidden shadow-inner">
+              <div id="qr-reader" className="w-full text-white rounded-xl overflow-hidden" />
             </div>
           ) : (
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center justify-center">
