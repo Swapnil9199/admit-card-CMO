@@ -19,9 +19,9 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
       <div className="admit-card-page bg-white p-7 sm:p-8 border-2 border-slate-900 shadow-2xl relative w-[780px] min-w-[780px] aspect-[1/1.414] flex flex-col justify-between overflow-hidden shrink-0">
         <div>
           {/* Header Section (Unbreakable 3-Column Grid) */}
-          <div className="grid grid-cols-[90px_1fr_105px] items-center gap-3 border-b-2 border-slate-900 pb-4 mb-4">
+          <div className="grid grid-cols-[130px_1fr_105px] items-center gap-3 border-b-2 border-slate-900 pb-4 mb-4">
             {/* Institute Logo */}
-            <div className="w-[90px] h-[90px] border border-slate-300 rounded p-1 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+            <div className="w-[130px] h-[160px] border border-slate-300 rounded p-1 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
               <img
                 src={instituteInfo?.logoUrl || "/assets/combine_mentor_logo.jpg"}
                 alt="Institute Logo"
