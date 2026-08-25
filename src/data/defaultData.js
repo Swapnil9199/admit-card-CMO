@@ -6,24 +6,24 @@ export const DEFAULT_INSTITUTE_INFO = {
   logoUrl: "/assets/combine_mentor_logo.jpg",
   instituteName: "COMBINE MENTOR OFFICIAL",
   instituteTagline: "Vision of Every Aspirant's",
-  instituteAddress: "3rd Floor, Balaji Chambers, Near ABC Chowk, NC Kelkar Road, Pune - 411002",
-  examTitle: "MPSC Combine Group B & C Services (गट ब व गट क संयुक्त पूर्व परीक्षा 2026)",
-  examCentre: "S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
-  signatoryName: "Umesh V. Kudale",
-  signatoryTitle: "HEAD OF EXAM OPERATIONS",
+  instituteAddress: "Combine Mentor Official, Geetai Apartment, 1st Floor, Hatti Ganpati Chowk, Sadashiv Peth, Pune 30",
+  examTitle: "MPSC Combine Group C Examination 2026 ( गट क संयुक्त पूर्व परीक्षा 2026)",
+  examCentre: " Biology building ,S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
+  signatoryName: "Ganesh Pawar",
+  signatoryTitle: "INCHARGE OF TEST SERIES",
   signatorySubtext: "Combine Mentor Official, Pune",
-  telegramChannel: "@combinementor",
-  websiteUrl: "https://combinementor.in"
+
+
 };
 
 export const DEFAULT_TIMETABLE = [
-  { id: 1, subject: "Comprehensive Test 1 (General Studies & CSAT)", date: "23-08-2026", time: "11:00 AM - 12:00 PM" },
-  { id: 2, subject: "Comprehensive Test 2 (History & Polity)", date: "30-08-2026", time: "11:00 AM - 12:00 PM" },
-  { id: 3, subject: "Comprehensive Test 3 (Geography & Agriculture)", date: "06-09-2026", time: "11:00 AM - 12:00 PM" },
-  { id: 4, subject: "Comprehensive Test 4 (Economy & Planning)", date: "14-09-2026", time: "11:00 AM - 12:00 PM" },
-  { id: 5, subject: "Comprehensive Test 5 (General Science & Tech)", date: "27-09-2026", time: "11:00 AM - 12:00 PM" },
-  { id: 6, subject: "Comprehensive Test 6 (Current Affairs & Aptitude)", date: "04-10-2026", time: "11:00 AM - 12:00 PM" },
-  { id: 7, subject: "Comprehensive Test 7 (Full Length Mock Exam)", date: "11-10-2026", time: "11:00 AM - 12:00 PM" }
+  { id: 1, subject: "Comprehensive Test 1 ", date: "23-08-2026", time: "11:00 AM - 12:00 PM" },
+  { id: 2, subject: "Comprehensive Test 2 ", date: "30-08-2026", time: "11:00 AM - 12:00 PM" },
+  { id: 3, subject: "Comprehensive Test 3 ", date: "06-09-2026", time: "11:00 AM - 12:00 PM" },
+  { id: 4, subject: "Comprehensive Test 4 ", date: "14-09-2026", time: "11:00 AM - 12:00 PM" },
+  { id: 5, subject: "Comprehensive Test 5 ", date: "27-09-2026", time: "11:00 AM - 12:00 PM" },
+  { id: 6, subject: "Comprehensive Test 6 ", date: "04-10-2026", time: "11:00 AM - 12:00 PM" },
+  { id: 7, subject: "Comprehensive Test 7 ", date: "11-10-2026", time: "11:00 AM - 12:00 PM" }
 ];
 
 export const DEFAULT_RULES_MARATHI = [
@@ -34,8 +34,7 @@ export const DEFAULT_RULES_MARATHI = [
   "उपस्थिती: परीक्षा सुरू होण्यापूर्वी किमान ३० मिनिटे अगोदर परीक्षा केंद्रावर हजर राहावे.",
   "वेळापत्रक व अधिकार: परीक्षेचे वेळापत्रक खालील तक्त्यात दिले आहे. अपरिहार्य कारणास्तव परीक्षा केंद्र किंवा वेळेत बदल करण्याचा अधिकार संस्थेने राखून ठेवला आहे.",
   "महत्त्वाचे अपडेट्स: परीक्षेच्या माहितीसाठी व मदतीसाठी Telegram वर @combinementor सर्च करून चॅनेल जॉईन करावे, तसेच combinementor.in या संकेतस्थळाला (Website) नियमित भेट द्यावी.",
-  "सर्व यंत्रणा ऑनलाईन पद्धतीने असल्यामुळे विद्यार्थ्यांना केवळ त्यांच्या नियोजित वेळेत आणि नियोजित परीक्षा केंद्रावरच परीक्षा देता येईल.",
-  "कुठल्याही परिस्थितीत उमेदवाराच्या परीक्षा केंद्रात आणि वेळेत तांत्रिक अडचणीच्या पार्श्वभूमीवर बदल करता येत नाही."
+  "सर्व यंत्रणा ऑनलाईन पद्धतीने असल्यामुळे विद्यार्थ्यांना केवळ त्यांच्या नियोजित वेळेत आणि नियोजित परीक्षा केंद्रावरच परीक्षा देता येईल."
 ];
 
 export const DEFAULT_PROHIBITED_ITEMS = "उमेदवारांनी परीक्षा कक्षेत प्रवेश केल्यावर आपले इलेक्ट्रॉनिक उपकरणे उदा. मोबाईल आणि हेडफोन्स बंद करून ठेवावेत. उमेदवारांना केवळ काळ्या शाईचे बॉल पेन आणि पाण्याची बॉटल परीक्षा कक्षात घेऊन जाण्याची परवानगी देण्यात आली आहे.";
