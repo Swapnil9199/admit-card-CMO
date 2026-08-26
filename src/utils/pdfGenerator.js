@@ -84,11 +84,11 @@ export async function generateAdmitCardPdfBase64(elementId, candidateName = "Can
     }
 
     const canvas = await html2canvas(page, {
-      scale: 2.2,
+      scale: 2.5,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 1000
+      windowWidth: 1200
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.95);

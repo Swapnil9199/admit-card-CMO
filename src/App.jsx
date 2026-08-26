@@ -743,7 +743,7 @@ export default function App() {
       </main>
 
       {/* Hidden Offscreen Admit Card Renderer for background PDF email generation */}
-      <div className="fixed -left-[9999px] top-0 pointer-events-none opacity-0" aria-hidden="true">
+      <div style={{ position: 'fixed', left: '-9999px', top: '0px', width: '800px', zIndex: -9999, pointerEvents: 'none' }} aria-hidden="true">
         <AdmitCard
           id="admit-card-email-render"
           candidate={emailCandidateTarget || selectedCandidate}

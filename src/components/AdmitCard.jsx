@@ -65,19 +65,35 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
           </div>
 
           {/* Title Banner */}
-          <div className="text-center my-3">
+          <div className="text-center my-3" style={{ textAlign: 'center' }}>
             <div
               className="inline-block px-8 py-1.5 rounded-sm shadow"
-              style={{ backgroundColor: '#020617', color: '#ffffff' }}
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#020617',
+                color: '#ffffff',
+                padding: '6px 32px',
+                borderRadius: '2px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+              }}
             >
               <h2
-                className="text-lg sm:text-xl font-extrabold tracking-widest uppercase"
-                style={{ color: '#ffffff', margin: 0 }}
+                className="text-lg sm:text-xl font-extrabold uppercase"
+                style={{
+                  color: '#ffffff',
+                  fontSize: '18px',
+                  fontWeight: '800',
+                  letterSpacing: '3px',
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  padding: 0,
+                  lineHeight: '1.2'
+                }}
               >
                 ADMIT CARD
               </h2>
             </div>
-            <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1.5 tracking-wide">
+            <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1.5 tracking-wide" style={{ color: '#1e293b', fontWeight: '700', fontSize: '13px', marginTop: '6px' }}>
               {candidate.examTitle || instituteInfo?.examTitle || "MPSC Combine Group B & C Services"}
             </p>
           </div>
