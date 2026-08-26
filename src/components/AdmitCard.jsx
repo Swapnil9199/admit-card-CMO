@@ -64,40 +64,35 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
             </div>
           </div>
 
-          {/* Title Banner (SVG Vector Badge - 100% immune to html2canvas font drops) */}
-          <div className="text-center my-3 flex flex-col items-center justify-center" style={{ textAlign: 'center' }}>
-            <svg
-              width="280"
-              height="40"
-              viewBox="0 0 280 40"
-              className="block mx-auto"
-              style={{ display: 'block', margin: '0 auto' }}
-              aria-label="ADMIT CARD"
+          {/* Title Banner */}
+          <div className="text-center my-3" style={{ textAlign: 'center' }}>
+            <div
+              className="inline-block px-8 py-1.5 rounded-sm shadow-sm"
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#ffffff',
+                border: '2px solid #000000',
+                padding: '6px 36px',
+                borderRadius: '4px'
+              }}
             >
-              <rect
-                x="2"
-                y="2"
-                width="276"
-                height="36"
-                rx="4"
-                fill="#ffffff"
-                stroke="#000000"
-                strokeWidth="2.5"
-              />
-              <text
-                x="140"
-                y="25"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="#000000"
-                fontSize="18"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-                letterSpacing="4"
+              <h2
+                className="admit-card-title-text text-lg sm:text-xl uppercase"
+                style={{
+                  color: '#000000',
+                  fontSize: '20px',
+                  fontWeight: '900',
+                  letterSpacing: '4px',
+                  textTransform: 'uppercase',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  margin: 0,
+                  padding: 0,
+                  lineHeight: '1.2'
+                }}
               >
                 ADMIT CARD
-              </text>
-            </svg>
+              </h2>
+            </div>
             <p className="text-xs sm:text-sm font-bold text-slate-900 mt-1.5 tracking-wide" style={{ color: '#0f172a', fontWeight: '700', fontSize: '13px', marginTop: '6px' }}>
               {candidate.examTitle || instituteInfo?.examTitle || "MPSC Combine Group B & C Services"}
             </p>

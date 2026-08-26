@@ -27,10 +27,6 @@ export async function downloadAdmitCardPdf(elementId, candidateName = "Candidate
   const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
   const margin = 5; // 5mm margin
 
-  if (document.fonts) {
-    await document.fonts.ready;
-  }
-
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
     if (i > 0) {
@@ -42,7 +38,19 @@ export async function downloadAdmitCardPdf(elementId, candidateName = "Candidate
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 1000
+      windowWidth: 1200,
+      scrollX: 0,
+      scrollY: 0,
+      onclone: (clonedDoc) => {
+        const titleNodes = clonedDoc.querySelectorAll('.admit-card-title-text');
+        titleNodes.forEach(node => {
+          node.style.color = '#000000';
+          node.style.visibility = 'visible';
+          node.style.opacity = '1';
+          node.style.display = 'block';
+          node.style.fontWeight = '900';
+        });
+      }
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -81,10 +89,6 @@ export async function generateAdmitCardPdfBase64(elementId, candidateName = "Can
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const margin = 5;
 
-  if (document.fonts) {
-    await document.fonts.ready;
-  }
-
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
     if (i > 0) {
@@ -96,7 +100,19 @@ export async function generateAdmitCardPdfBase64(elementId, candidateName = "Can
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 1200
+      windowWidth: 1200,
+      scrollX: 0,
+      scrollY: 0,
+      onclone: (clonedDoc) => {
+        const titleNodes = clonedDoc.querySelectorAll('.admit-card-title-text');
+        titleNodes.forEach(node => {
+          node.style.color = '#000000';
+          node.style.visibility = 'visible';
+          node.style.opacity = '1';
+          node.style.display = 'block';
+          node.style.fontWeight = '900';
+        });
+      }
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
