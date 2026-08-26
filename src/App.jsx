@@ -44,8 +44,14 @@ export default function App() {
   // Admin Authentication Session State
   const [currentAdmin, setCurrentAdmin] = useState(() => getCurrentAdmin());
 
+  // Auto-sync template updates from code when codebase is edited
+  const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_ganesh_rules';
+
   // Exam Centres State (Default: S.P. College Pune)
   const [examCentres, setExamCentres] = useState(() => {
+    if (localStorage.getItem('cm_tpl_sync') !== CURRENT_TEMPLATE_VER) {
+      return DEFAULT_EXAM_CENTRES;
+    }
     const saved = localStorage.getItem('cm_exam_centres');
     return saved ? JSON.parse(saved) : DEFAULT_EXAM_CENTRES;
   });
@@ -57,24 +63,41 @@ export default function App() {
   });
 
   const [instituteInfo, setInstituteInfo] = useState(() => {
+    if (localStorage.getItem('cm_tpl_sync') !== CURRENT_TEMPLATE_VER) {
+      return DEFAULT_INSTITUTE_INFO;
+    }
     const saved = localStorage.getItem('cm_institute');
-    return saved ? JSON.parse(saved) : DEFAULT_INSTITUTE_INFO;
+    return saved ? { ...DEFAULT_INSTITUTE_INFO, ...JSON.parse(saved) } : DEFAULT_INSTITUTE_INFO;
   });
 
   const [timetable, setTimetable] = useState(() => {
+    if (localStorage.getItem('cm_tpl_sync') !== CURRENT_TEMPLATE_VER) {
+      return DEFAULT_TIMETABLE;
+    }
     const saved = localStorage.getItem('cm_timetable');
     return saved ? JSON.parse(saved) : DEFAULT_TIMETABLE;
   });
 
   const [rules, setRules] = useState(() => {
+    if (localStorage.getItem('cm_tpl_sync') !== CURRENT_TEMPLATE_VER) {
+      return DEFAULT_RULES_MARATHI;
+    }
     const saved = localStorage.getItem('cm_rules');
     return saved ? JSON.parse(saved) : DEFAULT_RULES_MARATHI;
   });
 
   const [prohibitedItems, setProhibitedItems] = useState(() => {
+    if (localStorage.getItem('cm_tpl_sync') !== CURRENT_TEMPLATE_VER) {
+      return DEFAULT_PROHIBITED_ITEMS;
+    }
     const saved = localStorage.getItem('cm_prohibited');
     return saved ? JSON.parse(saved) : DEFAULT_PROHIBITED_ITEMS;
   });
+
+  // Stamp template sync version
+  useEffect(() => {
+    localStorage.setItem('cm_tpl_sync', CURRENT_TEMPLATE_VER);
+  }, []);
 
   // Admin SMTP configuration state
   const [adminSmtpInfo, setAdminSmtpInfo] = useState({
