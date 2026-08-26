@@ -68,7 +68,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
           <div className="text-center my-3">
             <div className="inline-block bg-slate-950 text-white px-8 py-1.5 rounded-sm shadow">
               <h2 className="text-lg sm:text-xl font-extrabold tracking-widest uppercase">
-                HALL TICKET / ADMIT CARD
+                ADMIT CARD
               </h2>
             </div>
             <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1.5 tracking-wide">
@@ -238,7 +238,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
           <div className="text-right">
             <div className="inline-block border-b border-slate-900 pb-0.5 mb-1 px-4">
               <span className="text-sm font-bold text-slate-900 font-serif">
-                {instituteInfo?.signatoryName || "Umesh V. Kudale"}
+                {instituteInfo?.signatoryName || "Ganesh Pawar"}
               </span>
             </div>
             <p className="text-[11px] font-extrabold tracking-wider uppercase text-slate-950">
@@ -271,15 +271,16 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
             </h4>
             <ol className="list-decimal pl-5 text-[11px] sm:text-xs text-slate-800 space-y-2 leading-relaxed">
               {(rules && rules.length > 0 ? rules : [
-                "प्रवेश अनिवार्य: परीक्षा केंद्रात प्रवेशासाठी हॉल तिकीटची छापील प्रत (Printed Hard Copy) सोबत असणे बंधनकारक आहे. प्रवेशपत्रावरील माहितीच्या आधारेच पडताळणी (Verification) केली जाईल.",
-                "सामायिक प्रवेशपत्र: संपूर्ण सराव परीक्षा मालिकेसाठी (Test Series) हे एकच प्रवेशपत्र लागू असेल. प्रत्येक पेपरच्या वेळी विद्यार्थ्याने हेच प्रवेशपत्र सोबत आणावे.",
-                "प्रिंट गुणवत्ता: प्रवेशपत्रावरील QR कोड आणि Barcode स्कॅनिंगसाठी सुस्पष्ट असावेत, यासाठी प्रिंटची गुणवत्ता (Good Quality) चांगली असावी.",
-                "आसन क्रमांक: OMR शीटवर प्रवेशपत्रात नमूद केलेला ७ अंकी आसन क्रमांक (Seat No.) अचूक भरावा.",
-                "उपस्थिती: परीक्षा सुरू होण्यापूर्वी किमान ३० मिनिटे अगोदर परीक्षा केंद्रावर हजर राहावे.",
-                "वेळापत्रक व अधिकार: परीक्षेचे वेळापत्रक खालील तक्त्यात दिले आहे. अपरिहार्य कारणास्तव परीक्षा केंद्र किंवा वेळेत बदल करण्याचा अधिकार संस्थेने राखून ठेवला आहे.",
-                "महत्त्वाचे अपडेट्स: परीक्षेच्या माहितीसाठी व मदतीसाठी Telegram वर @combinementor सर्च करून चॅनेल जॉईन करावे, तसेच combinementor.in या संकेतस्थळाला (Website) नियमित भेट द्यावी.",
-                "सर्व यंत्रणा ऑनलाईन पद्धतीने असल्यामुळे विद्यार्थ्यांना केवळ त्यांच्या नियोजित वेळेत आणि नियोजित परीक्षा केंद्रावरच परीक्षा देता येईल.",
-                "कुठल्याही परिस्थितीत उमेदवाराच्या परीक्षा केंद्रात आणि वेळेत तांत्रिक अडचणीच्या पार्श्वभूमीवर बदल करता येत नाही."
+                "प्रत्येक विद्यार्थ्याने हॉल तिकीट ची छापील प्रत स्वतःबरोबर आणणे बंधनकारक आहे.",
+                "छापील हॉल तिकीट शिवाय कोणालाही प्रवेश दिला जाणार नाही.",
+                "परीक्षा केंद्रावर दिलेल्या वेळेच्या अर्धा तास अगोदर उपस्थित राहणे अनिवार्य आहे.",
+                "टेस्ट सिरीज च्या वेळापत्रकात बदल केल्यास तशी पूर्वसूचना विद्यार्थ्यांना देण्यात येईल.",
+                "परीक्षेसंबंधी काही शंका असल्यास अगोदरच ऑफिसशी संपर्क साधणे आवश्यक आहे.",
+                "सर्व अधिकार Combine Mentor Official कडे राखीव असतील.",
+
+
+
+
               ]).map((rule, index) => (
                 <li key={index} className="pl-1">
                   {rule}
