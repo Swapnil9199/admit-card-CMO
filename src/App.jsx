@@ -45,7 +45,7 @@ export default function App() {
   const [currentAdmin, setCurrentAdmin] = useState(() => getCurrentAdmin());
 
   // Auto-sync template updates from code when codebase is edited
-  const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_ganesh_rules';
+  const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_mpsc_c_sync';
 
   // Exam Centres State (Default: S.P. College Pune)
   const [examCentres, setExamCentres] = useState(() => {
@@ -58,6 +58,9 @@ export default function App() {
 
   // LocalStorage-backed state or defaults
   const [candidates, setCandidates] = useState(() => {
+    if (localStorage.getItem('cm_tpl_sync') !== CURRENT_TEMPLATE_VER) {
+      return INITIAL_CANDIDATES;
+    }
     const saved = localStorage.getItem('cm_candidates');
     return saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
   });

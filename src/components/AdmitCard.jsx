@@ -114,7 +114,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
                       Exam Title:
                     </td>
                     <td className="p-2 font-medium text-slate-900">
-                      {candidate.examTitle || "गट क - पूर्व परीक्षा 2026"}
+                      {candidate.examTitle || "MPSC Combine Group C Examination 2026 (संयुक्त गट क - पूर्व परीक्षा 2026)"}
                     </td>
                   </tr>
                   <tr>

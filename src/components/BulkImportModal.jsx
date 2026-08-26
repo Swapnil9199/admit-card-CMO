@@ -190,7 +190,7 @@ export default function BulkImportModal({
                     handleUpdateAdminBatchSettings(e.target.value, currentExamCentre);
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
-                  placeholder="e.g. गट क - पूर्व परीक्षा 2026"
+                  placeholder="e.g. संयुक्त गट क - पूर्व परीक्षा 2026"
                 />
               </div>
 
@@ -272,11 +272,10 @@ export default function BulkImportModal({
                     handleFileUpload(e.dataTransfer.files[0]);
                   }
                 }}
-                className={`border-2 border-dashed rounded-3xl p-8 text-center transition-all ${
-                  isDragging
+                className={`border-2 border-dashed rounded-3xl p-8 text-center transition-all ${isDragging
                     ? 'border-blue-500 bg-blue-500/10'
                     : 'border-slate-700 hover:border-slate-500 bg-slate-800/20'
-                }`}
+                  }`}
               >
                 <input
                   type="file"

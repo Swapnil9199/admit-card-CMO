@@ -204,7 +204,7 @@ export default function CandidateModal({
                 type="text"
                 value={formData.examTitle}
                 onChange={(e) => setFormData({ ...formData, examTitle: e.target.value })}
-                placeholder="e.g. गट क - पूर्व परीक्षा 2026"
+                placeholder="e.g.संयुक्त गट क - पूर्व परीक्षा 2026"
                 className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"
               />
             </div>
