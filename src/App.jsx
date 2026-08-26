@@ -236,14 +236,19 @@ export default function App() {
 
     try {
       await new Promise(r => setTimeout(r, 350));
-      const pdfBase64 = await generateAdmitCardPdfBase64('admit-card-email-render');
+      const pdfResult = await generateAdmitCardPdfBase64('admit-card-email-render', candidateObj.name);
+      const rawPdfBase64 = typeof pdfResult === 'object' && pdfResult?.pdfBase64 ? pdfResult.pdfBase64 : pdfResult;
+      const pdfFilename = typeof pdfResult === 'object' && pdfResult?.filename ? pdfResult.filename : `Admit_Card_${candidateObj.name.replace(/\s+/g, '_')}.pdf`;
 
       const response = await sendAdmitCardEmail({
         recipientEmail: candidateObj.email,
+        recipientName: candidateObj.name,
         candidateName: candidateObj.name,
         examTitle: candidateObj.examTitle || instituteInfo.examTitle,
+        examCentre: candidateObj.examCentre || instituteInfo.examCentre,
         seatNo: candidateObj.seatNo,
-        pdfBase64: pdfBase64
+        pdfBase64: rawPdfBase64,
+        filename: pdfFilename
       });
 
       if (response.success) {

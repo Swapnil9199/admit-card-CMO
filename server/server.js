@@ -209,7 +209,16 @@ app.post('/api/test-smtp', async (req, res) => {
 
 // POST Send Admit Card PDF via Email from Admin to Candidate
 app.post('/api/send-admit-card-email', async (req, res) => {
-  const { recipientEmail, recipientName, seatNo, examTitle, examCentre, pdfBase64, filename } = req.body;
+  const recipientEmail = req.body.recipientEmail || req.body.email;
+  const safeName = req.body.recipientName || req.body.candidateName || req.body.name || "Candidate";
+  const safeSeat = req.body.seatNo || "N/A";
+  const safeExam = req.body.examTitle || "MPSC Combine Examination 2026";
+  const safeCentre = req.body.examCentre || "Assigned Examination Centre";
+  let pdfData = req.body.pdfBase64;
+  if (typeof pdfData === 'object' && pdfData?.pdfBase64) {
+    pdfData = pdfData.pdfBase64;
+  }
+  const filename = req.body.filename || `Admit_Card_${safeName.replace(/\s+/g, '_')}.pdf`;
 
   if (!recipientEmail) {
     return res.status(400).json({
@@ -219,7 +228,7 @@ app.post('/api/send-admit-card-email', async (req, res) => {
     });
   }
 
-  if (!pdfBase64) {
+  if (!pdfData) {
     return res.status(400).json({
       success: false,
       message: "Admit card generated successfully, but we could not send it to the email address. Please try again.",
@@ -230,9 +239,6 @@ app.post('/api/send-admit-card-email', async (req, res) => {
   try {
     const smtpConfig = loadSmtpConfig();
     const transporter = await createTransporter(smtpConfig);
-
-    const safeName = recipientName || "Candidate";
-    const safeExam = examTitle || "MPSC Combine Examination 2026";
     const safeSeat = seatNo || "N/A";
     const safeCentre = examCentre || "Assigned Examination Centre";
 
@@ -328,7 +334,7 @@ app.post('/api/send-admit-card-email', async (req, res) => {
       attachments: [
         {
           filename: cleanFilename,
-          content: Buffer.from(pdfBase64, 'base64'),
+          content: Buffer.from(pdfData, 'base64'),
           contentType: 'application/pdf'
         }
       ]
