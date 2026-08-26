@@ -27,6 +27,10 @@ export async function downloadAdmitCardPdf(elementId, candidateName = "Candidate
   const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
   const margin = 5; // 5mm margin
 
+  if (document.fonts) {
+    await document.fonts.ready;
+  }
+
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
     if (i > 0) {
@@ -76,6 +80,10 @@ export async function generateAdmitCardPdfBase64(elementId, candidateName = "Can
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const margin = 5;
+
+  if (document.fonts) {
+    await document.fonts.ready;
+  }
 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
