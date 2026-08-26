@@ -17,7 +17,7 @@ export default function CandidateModal({
     email: '',
     examTitle: 'गट क - पूर्व परीक्षा 2026',
     seatNo: '',
-    examCentre: 'S.P. College (Sir Parashurambhau College), Tilak Road, Pune',
+    examCentre: 'Biology Building S.P. College (Sir Parashurambhau College), Tilak Road, Pune',
     photoUrl: '',
     uniqueCode: ''
   });
