@@ -67,23 +67,23 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
           {/* Title Banner */}
           <div className="text-center my-3" style={{ textAlign: 'center' }}>
             <div
-              className="inline-block px-8 py-1.5 rounded-sm shadow"
+              className="inline-block px-8 py-1.5 rounded-sm shadow-sm"
               style={{
                 display: 'inline-block',
-                backgroundColor: '#020617',
-                color: '#ffffff',
-                padding: '6px 32px',
-                borderRadius: '2px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                backgroundColor: '#ffffff',
+                border: '2px solid #000000',
+                color: '#000000',
+                padding: '6px 36px',
+                borderRadius: '4px'
               }}
             >
               <h2
-                className="text-lg sm:text-xl font-extrabold uppercase"
+                className="text-lg sm:text-xl font-black uppercase"
                 style={{
-                  color: '#ffffff',
-                  fontSize: '18px',
-                  fontWeight: '800',
-                  letterSpacing: '3px',
+                  color: '#000000',
+                  fontSize: '20px',
+                  fontWeight: '900',
+                  letterSpacing: '4px',
                   textTransform: 'uppercase',
                   margin: 0,
                   padding: 0,
@@ -93,7 +93,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
                 ADMIT CARD
               </h2>
             </div>
-            <p className="text-xs sm:text-sm font-bold text-slate-800 mt-1.5 tracking-wide" style={{ color: '#1e293b', fontWeight: '700', fontSize: '13px', marginTop: '6px' }}>
+            <p className="text-xs sm:text-sm font-bold text-slate-900 mt-1.5 tracking-wide" style={{ color: '#0f172a', fontWeight: '700', fontSize: '13px', marginTop: '6px' }}>
               {candidate.examTitle || instituteInfo?.examTitle || "MPSC Combine Group B & C Services"}
             </p>
           </div>
