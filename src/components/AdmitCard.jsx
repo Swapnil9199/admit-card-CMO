@@ -66,8 +66,14 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
 
           {/* Title Banner */}
           <div className="text-center my-3">
-            <div className="inline-block bg-slate-950 text-white px-8 py-1.5 rounded-sm shadow">
-              <h2 className="text-lg sm:text-xl font-extrabold tracking-widest uppercase">
+            <div
+              className="inline-block px-8 py-1.5 rounded-sm shadow"
+              style={{ backgroundColor: '#020617', color: '#ffffff' }}
+            >
+              <h2
+                className="text-lg sm:text-xl font-extrabold tracking-widest uppercase"
+                style={{ color: '#ffffff', margin: 0 }}
+              >
                 ADMIT CARD
               </h2>
             </div>
@@ -173,7 +179,7 @@ export default function AdmitCard({ candidate, instituteInfo, timetable, rules, 
                     {candidate.seatNo || "1250042"}
                   </td>
                   <td className="p-2.5 text-left pl-4 font-semibold text-slate-900">
-                    {candidate.examCentre || instituteInfo?.examCentre || "S.P. College (Sir Parashurambhau College), Tilak Road, Pune"}
+                    {candidate.examCentre || instituteInfo?.examCentre || "Biology building S.P. College (Sir Parashurambhau College), Tilak Road, Pune"}
                   </td>
                 </tr>
               </tbody>
