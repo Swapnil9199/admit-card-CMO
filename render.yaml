@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: admit-card-attendance-system
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_NAME
+        value: Combine Mentor Official
+      - key: ADMIN_EMAIL
+        value: admin@combinementor.in
