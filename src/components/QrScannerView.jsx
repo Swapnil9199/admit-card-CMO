@@ -214,8 +214,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
             <button
               onClick={() => setIsCameraActive(!isCameraActive)}
               className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${isCameraActive
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
                 }`}
             >
               {isCameraActive ? 'Stop Camera' : 'Start Camera Scanner'}
@@ -318,8 +318,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
               {/* Status Banner */}
               <div
                 className={`p-4 rounded-xl flex items-center gap-3 border ${scanStatus === 'SUCCESS'
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                    : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                  : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
                   }`}
               >
                 <CheckCircle2 className="w-6 h-6 shrink-0" />
@@ -346,7 +346,7 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
                       {scannedResult.name}
                     </h3>
                     <p className="text-xs text-blue-400 font-semibold">
-                      {scannedResult.examTitle || "गट क - पूर्व परीक्षा 2026"}
+                      {scannedResult.examTitle || "संयुक्त गट क - पूर्व परीक्षा 2026"}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono text-xs font-bold">
@@ -387,8 +387,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
                         setScanStatus('SUCCESS');
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${scannedResult.attendanceStatus === 'Present'
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                     >
                       Present
@@ -401,8 +401,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
                         setScannedResult(prev => ({ ...prev, attendanceStatus: 'Not Marked' }));
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${scannedResult.attendanceStatus === 'Absent'
-                          ? 'bg-rose-600 text-white'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        ? 'bg-rose-600 text-white'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         }`}
                     >
                       Absent / Reset

@@ -183,7 +183,7 @@ export function formatCandidateName(name) {
 export function parseAnyCsvFile(
   file,
   columnMapping = {},
-  adminExamTitle = "गट क - पूर्व परीक्षा 2026",
+  adminExamTitle = "संयुक्त गट क - पूर्व परीक्षा 2026",
   adminExamCentre = "S.P. College (Sir Parashurambhau College), Tilak Road, Pune"
 ) {
   return new Promise((resolve, reject) => {
