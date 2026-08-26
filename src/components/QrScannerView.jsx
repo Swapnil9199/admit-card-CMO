@@ -22,7 +22,7 @@ function playScanBeep() {
 
     osc.start();
     osc.stop(audioCtx.currentTime + 0.15);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export default function QrScannerView({ candidates = [], onMarkAttendance }) {
@@ -199,11 +199,10 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
 
             <button
               onClick={() => setIsCameraActive(!isCameraActive)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${
-                isCameraActive
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition ${isCameraActive
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
                   : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
-              }`}
+                }`}
             >
               {isCameraActive ? 'Stop Camera' : 'Start Camera Scanner'}
             </button>
@@ -304,11 +303,10 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
             <div className="space-y-5 animate-fadeIn">
               {/* Status Banner */}
               <div
-                className={`p-4 rounded-xl flex items-center gap-3 border ${
-                  scanStatus === 'SUCCESS'
+                className={`p-4 rounded-xl flex items-center gap-3 border ${scanStatus === 'SUCCESS'
                     ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
                     : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
-                }`}
+                  }`}
               >
                 <CheckCircle2 className="w-6 h-6 shrink-0" />
                 <div>
@@ -374,11 +372,10 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
                         setScannedResult(prev => ({ ...prev, attendanceStatus: 'Present' }));
                         setScanStatus('SUCCESS');
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                        scannedResult.attendanceStatus === 'Present'
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${scannedResult.attendanceStatus === 'Present'
                           ? 'bg-emerald-600 text-white'
                           : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      }`}
+                        }`}
                     >
                       Present
                     </button>
@@ -389,11 +386,10 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
                         }
                         setScannedResult(prev => ({ ...prev, attendanceStatus: 'Not Marked' }));
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                        scannedResult.attendanceStatus === 'Absent'
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${scannedResult.attendanceStatus === 'Absent'
                           ? 'bg-rose-600 text-white'
                           : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      }`}
+                        }`}
                     >
                       Absent / Reset
                     </button>
