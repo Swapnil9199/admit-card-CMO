@@ -59,14 +59,32 @@ function saveSmtpConfig(config) {
 async function createTransporter(customConfig = null) {
   const config = customConfig || loadSmtpConfig();
 
-  if (config.host && config.user && config.pass) {
+  const user = String(config.user || config.adminEmail || '').trim();
+  const pass = String(config.pass || '').replace(/\s+/g, '').trim();
+  const host = String(config.host || '').trim();
+  const isGmail = host.includes('gmail') || config.provider === 'gmail' || user.endsWith('@gmail.com');
+
+  if ((host || isGmail) && user && pass) {
+    if (isGmail) {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: user,
+          pass: pass
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    }
+
     return nodemailer.createTransport({
-      host: config.host,
-      port: config.port || 587,
+      host: host,
+      port: config.port ? parseInt(config.port) : 587,
       secure: config.secure || config.port === 465,
       auth: {
-        user: config.user,
-        pass: config.pass
+        user: user,
+        pass: pass
       },
       tls: {
         rejectUnauthorized: false
@@ -178,9 +196,13 @@ app.post('/api/test-smtp', async (req, res) => {
     });
   } catch (error) {
     console.error("SMTP Test Error:", error);
+    let userFriendlyMsg = error.message || 'Please check host, port, username, and password.';
+    if (error.message?.includes('535') || error.message?.includes('BadCredentials') || error.message?.includes('Username and Password not accepted')) {
+      userFriendlyMsg = 'Google authentication rejected: Google requires a 16-character App Password generated at myaccount.google.com/apppasswords rather than your normal password. Also ensure your sender Gmail matches the Google account where the App Password was created.';
+    }
     res.status(400).json({
       success: false,
-      message: `SMTP connection failed: ${error.message || 'Please check host, port, username, and password.'}`
+      message: `SMTP connection failed: ${userFriendlyMsg}`
     });
   }
 });
