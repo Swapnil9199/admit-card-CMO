@@ -31,11 +31,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
   const [scanStatus, setScanStatus] = useState(null); // 'SUCCESS', 'NOT_FOUND', 'ALREADY_PRESENT'
   const [isCameraActive, setIsCameraActive] = useState(false);
   const scannerRef = useRef(null);
-<<<<<<< HEAD
   const celebratedIdsRef = useRef(new Set());
   const lastProcessedRef = useRef({ code: null, time: 0 });
-=======
->>>>>>> 6965852eca4462c528b01efb783c544a6cedb22b
 
   const candidatesRef = useRef(candidates);
   const onMarkAttendanceRef = useRef(onMarkAttendance);
@@ -122,7 +119,6 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
     if (!code) return;
     const cleanCode = String(code).trim().toLowerCase();
     const digitsOnly = cleanCode.replace(/\D/g, '');
-<<<<<<< HEAD
 
     // Debounce: ignore the same code scanned within 2 seconds
     const now = Date.now();
@@ -131,8 +127,6 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
     }
     lastProcessedRef.current = { code: cleanCode, time: now };
 
-=======
->>>>>>> 6965852eca4462c528b01efb783c544a6cedb22b
     const currentCandidates = candidatesRef.current || candidates;
 
     // Search across candidates
@@ -156,13 +150,8 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
 
     if (found) {
       playScanBeep();
-<<<<<<< HEAD
       const nowDate = new Date();
       const timeStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(nowDate.getDate()).padStart(2, '0')} ${nowDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-=======
-      const now = new Date();
-      const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
->>>>>>> 6965852eca4462c528b01efb783c544a6cedb22b
 
       const isAlreadyPresent = found.attendanceStatus === 'Present';
       setScanStatus(isAlreadyPresent ? 'ALREADY_PRESENT' : 'SUCCESS');
@@ -178,7 +167,6 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
         onMarkAttendanceRef.current(found.id, 'Present');
       }
 
-<<<<<<< HEAD
       // Only celebrate with confetti the FIRST time this candidate is verified
       if (!isAlreadyPresent && !celebratedIdsRef.current.has(found.id)) {
         celebratedIdsRef.current.add(found.id);
@@ -188,13 +176,6 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
           origin: { y: 0.6 }
         });
       }
-=======
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
->>>>>>> 6965852eca4462c528b01efb783c544a6cedb22b
     } else {
       setScannedResult({ rawCode: code || rawOriginal });
       setScanStatus('NOT_FOUND');
