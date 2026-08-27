@@ -24,6 +24,7 @@ import { downloadAdmitCardPdf, generateAdmitCardPdfBase64 } from './utils/pdfGen
 import { sendAdmitCardEmail, getSmtpConfig } from './services/emailService';
 import { getCurrentAdmin, logoutAdmin } from './services/authService';
 import { getAttendance, markAttendance, resetAttendance } from './services/attendanceService';
+import { getCandidates, bulkUpsertCandidates, deleteCandidate, deleteAllCandidates } from './services/candidateService';
 import {
   Printer,
   Download,
@@ -163,7 +164,7 @@ export default function App() {
 
   useEffect(() => {
     loadSmtpStatus();
-    syncAttendanceWithDb();
+    syncCandidatesWithDb();
   }, []);
 
   const loadSmtpStatus = async () => {
@@ -176,7 +177,25 @@ export default function App() {
     }
   };
 
-  const syncAttendanceWithDb = async () => {
+  /**
+   * Boot-time sync: load candidates from MongoDB first, then overlay attendance.
+   * Falls back to localStorage/defaults if MongoDB is offline.
+   */
+  const syncCandidatesWithDb = async () => {
+    try {
+      // 1. Load all persisted candidates from MongoDB
+      const candidateRes = await getCandidates();
+      if (candidateRes.success && Array.isArray(candidateRes.candidates) && candidateRes.candidates.length > 0) {
+        // Strip internal MongoDB fields (_id, __v) before storing in state
+        const dbCandidates = candidateRes.candidates.map(({ _id, __v, createdAt, updatedAt, ...c }) => c);
+        setCandidates(dbCandidates);
+        localStorage.setItem('cm_candidates', JSON.stringify(dbCandidates));
+      }
+    } catch (err) {
+      console.warn('Could not load candidates from MongoDB (offline?), using localStorage cache:', err);
+    }
+
+    // 2. Overlay attendance status from the attendance collection
     try {
       const res = await getAttendance();
       if (res.success && res.logs) {
@@ -205,7 +224,7 @@ export default function App() {
         });
       }
     } catch (err) {
-      console.error("Failed to sync attendance logs from MongoDB:", err);
+      console.error('Failed to sync attendance logs from MongoDB:', err);
     }
   };
 
@@ -318,23 +337,36 @@ export default function App() {
     setCandidates(updatedCandidates);
     setSelectedCandidateId(candidateData.id);
 
+    // Persist to MongoDB (upsert — safe to call on add or edit)
+    try {
+      await bulkUpsertCandidates([candidateData]);
+    } catch (err) {
+      console.warn('Could not save candidate to MongoDB (offline?), saved to localStorage only:', err);
+    }
+
     // ONLY send email if Admin explicitly checked the sendEmail permission checkbox
     if (sendEmail) {
       dispatchAdmitCardEmail(candidateData);
     }
   };
 
-  const handleDeleteCandidate = (id) => {
+  const handleDeleteCandidate = async (id) => {
     if (window.confirm("Are you sure you want to delete this candidate?")) {
       const remaining = candidates.filter(c => c.id !== id);
       setCandidates(remaining);
       if (selectedCandidateId === id) {
         setSelectedCandidateId(remaining[0]?.id || null);
       }
+      // Delete from MongoDB
+      try {
+        await deleteCandidate(id);
+      } catch (err) {
+        console.warn('Could not delete candidate from MongoDB (offline?), removed from localStorage only:', err);
+      }
     }
   };
 
-  const handleDeleteMultipleCandidates = (idsToDelete) => {
+  const handleDeleteMultipleCandidates = async (idsToDelete) => {
     if (!idsToDelete || idsToDelete.length === 0) return;
     if (window.confirm(`Are you sure you want to delete ${idsToDelete.length} selected candidate(s)?`)) {
       const remaining = candidates.filter(c => !idsToDelete.includes(c.id));
@@ -343,11 +375,25 @@ export default function App() {
         setSelectedCandidateId(remaining[0]?.id || null);
       }
       showToast('success', `Successfully deleted ${idsToDelete.length} candidate(s).`);
+      // Delete from MongoDB (fire & forget each deletion in parallel)
+      try {
+        await Promise.all(idsToDelete.map(id => deleteCandidate(id)));
+      } catch (err) {
+        console.warn('Could not delete candidates from MongoDB (offline?), removed from localStorage only:', err);
+      }
     }
   };
 
-  const handleBulkImport = (importedList) => {
-    setCandidates([...importedList, ...candidates]);
+  const handleBulkImport = async (importedList) => {
+    // Merge imported list: new candidates prepended, existing ones kept
+    // Deduplicate in UI state by uniqueCode so re-importing never doubles up
+    setCandidates(prev => {
+      const existingCodes = new Set(prev.map(c => c.uniqueCode));
+      const genuinelyNew = importedList.filter(c => !existingCodes.has(c.uniqueCode));
+      const updated = [...genuinelyNew, ...prev];
+      localStorage.setItem('cm_candidates', JSON.stringify(updated));
+      return updated;
+    });
     setSelectedCandidateId(importedList[0]?.id || selectedCandidateId);
     setActiveTab('CANDIDATES');
     confetti({
@@ -356,6 +402,18 @@ export default function App() {
       origin: { y: 0.6 }
     });
     showToast('success', `Successfully imported ${importedList.length} candidates.`);
+
+    // Persist to MongoDB — server-side dedup on uniqueCode means re-uploading same file is safe
+    try {
+      const res = await bulkUpsertCandidates(importedList);
+      if (res.success) {
+        console.log(`[MongoDB] Bulk import saved: ${res.upsertedCount} candidates upserted.`);
+      } else {
+        console.warn('[MongoDB] Bulk import partially failed:', res.message);
+      }
+    } catch (err) {
+      console.warn('Could not save bulk import to MongoDB (offline?), saved to localStorage only:', err);
+    }
   };
 
   // Attendance Operations

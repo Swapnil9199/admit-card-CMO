@@ -29,6 +29,24 @@ const attendanceSchema = new mongoose.Schema({
 
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
+// Define Candidate Schema for storing all imported/added candidates
+const candidateSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  uniqueCode: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  phone: { type: String, default: '' },
+  email: { type: String, default: '' },
+  examTitle: { type: String, default: '' },
+  seatNo: { type: String, default: '' },
+  examCentre: { type: String, default: '' },
+  photoUrl: { type: String, default: '' },
+  attendanceStatus: { type: String, default: 'Not Marked' },
+  verifiedAt: { type: String, default: null }
+}, { timestamps: true });
+
+const Candidate = mongoose.model('Candidate', candidateSchema);
+
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 const CONFIG_FILE = path.join(__dirname, 'smtp_config.json');
@@ -185,10 +203,89 @@ app.post('/api/attendance/reset', async (req, res) => {
   }
 });
 
+// ==================== CANDIDATE ENDPOINTS ====================
+
+// GET all candidates from MongoDB
+app.get('/api/candidates', async (req, res) => {
+  try {
+    const candidates = await Candidate.find({}).sort({ createdAt: 1 });
+    console.log(`[MongoDB] Loaded ${candidates.length} candidates from database.`);
+    res.json({ success: true, candidates });
+  } catch (err) {
+    console.error('Error fetching candidates from MongoDB:', err);
+    res.status(500).json({ success: false, message: 'Database error while fetching candidates.', error: err.message });
+  }
+});
+
+// POST bulk upsert candidates — deduplicates on uniqueCode (safe to import same file multiple times)
+app.post('/api/candidates/bulk', async (req, res) => {
+  const { candidates } = req.body;
+
+  if (!Array.isArray(candidates) || candidates.length === 0) {
+    return res.status(400).json({ success: false, message: 'candidates array is required and must not be empty.' });
+  }
+
+  try {
+    const results = await Promise.all(
+      candidates.map(c =>
+        Candidate.findOneAndUpdate(
+          { uniqueCode: c.uniqueCode },  // Match key — unique per candidate
+          {
+            id: c.id,
+            uniqueCode: c.uniqueCode,
+            name: c.name,
+            phone: c.phone || '',
+            email: c.email || '',
+            examTitle: c.examTitle || '',
+            seatNo: c.seatNo || '',
+            examCentre: c.examCentre || '',
+            photoUrl: c.photoUrl || '',
+            attendanceStatus: c.attendanceStatus || 'Not Marked',
+            verifiedAt: c.verifiedAt || null
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        )
+      )
+    );
+
+    console.log(`[MongoDB] Bulk upserted ${results.length} candidates (deduplication applied on uniqueCode).`);
+    res.json({ success: true, upsertedCount: results.length, message: `${results.length} candidate(s) saved to database.` });
+  } catch (err) {
+    console.error('Error bulk upserting candidates in MongoDB:', err);
+    res.status(500).json({ success: false, message: 'Database error while saving candidates.', error: err.message });
+  }
+});
+
+// DELETE a single candidate by their app id field
+app.delete('/api/candidates/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await Candidate.deleteOne({ id });
+    console.log(`[MongoDB] Deleted candidate with id: ${id} (deletedCount: ${result.deletedCount})`);
+    res.json({ success: true, message: 'Candidate deleted from database.' });
+  } catch (err) {
+    console.error('Error deleting candidate from MongoDB:', err);
+    res.status(500).json({ success: false, message: 'Database error while deleting candidate.', error: err.message });
+  }
+});
+
+// DELETE all candidates (full reset)
+app.delete('/api/candidates', async (req, res) => {
+  try {
+    const result = await Candidate.deleteMany({});
+    console.log(`[MongoDB] Deleted all ${result.deletedCount} candidates from database.`);
+    res.json({ success: true, message: `All ${result.deletedCount} candidates deleted from database.` });
+  } catch (err) {
+    console.error('Error deleting all candidates from MongoDB:', err);
+    res.status(500).json({ success: false, message: 'Database error while deleting candidates.', error: err.message });
+  }
+});
+
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
+
 
 // GET active SMTP configuration (with password masked for security)
 app.get('/api/get-smtp', (req, res) => {
