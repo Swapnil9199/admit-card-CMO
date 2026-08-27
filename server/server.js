@@ -16,7 +16,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/admit_card_db';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('Successfully connected to MongoDB: ' + MONGO_URI))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => console.warn('MongoDB connection optional/skipped: ' + err.message));
 
 // Define Attendance Schema for Present and Absent students
 const attendanceSchema = new mongoose.Schema({
@@ -34,7 +34,7 @@ const PORT = process.env.PORT || 5001;
 const CONFIG_FILE = path.join(__dirname, 'smtp_config.json');
 
 // Enable CORS and JSON parsing for large PDF base64 payloads
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
