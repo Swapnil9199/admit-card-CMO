@@ -39,9 +39,6 @@ export const DEFAULT_RULES_MARATHI = [
 
 export const DEFAULT_PROHIBITED_ITEMS = "उमेदवारांनी परीक्षा कक्षेत प्रवेश केल्यावर आपले इलेक्ट्रॉनिक उपकरणे उदा. मोबाईल आणि हेडफोन्स बंद करून ठेवावेत. उमेदवारांना केवळ काळ्या शाईचे बॉल पेन आणि पाण्याची बॉटल परीक्षा कक्षात घेऊन जाण्याची परवानगी देण्यात आली आहे.";
 
-<<<<<<< HEAD
-export const INITIAL_CANDIDATES = [];
-=======
 export const INITIAL_CANDIDATES = [
   {
     id: "CM-2026-001",
@@ -109,4 +106,3 @@ export const INITIAL_CANDIDATES = [
     verifiedAt: null
   }
 ];
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
