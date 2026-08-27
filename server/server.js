@@ -14,6 +14,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/admit_card_db';
+mongoose.set('bufferCommands', false);
 mongoose.connect(MONGO_URI)
   .then(() => console.log('Successfully connected to MongoDB: ' + MONGO_URI))
   .catch(err => console.warn('MongoDB connection optional/skipped: ' + err.message));
