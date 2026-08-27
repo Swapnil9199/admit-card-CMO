@@ -5,13 +5,17 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+<<<<<<< HEAD
 import mongoose from 'mongoose';
+=======
+>>>>>>> f3485fc193221681fed3164f74fbbba02533e639
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+<<<<<<< HEAD
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/admit_card_db';
 mongoose.connect(MONGO_URI)
@@ -29,6 +33,8 @@ const attendanceSchema = new mongoose.Schema({
 
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
+=======
+>>>>>>> f3485fc193221681fed3164f74fbbba02533e639
 const app = express();
 const PORT = process.env.PORT || 5001;
 const CONFIG_FILE = path.join(__dirname, 'smtp_config.json');
@@ -130,6 +136,7 @@ async function createTransporter(customConfig = null) {
   }
 }
 
+<<<<<<< HEAD
 // GET all marked attendance records from MongoDB
 app.get('/api/attendance', async (req, res) => {
   try {
@@ -185,6 +192,8 @@ app.post('/api/attendance/reset', async (req, res) => {
   }
 });
 
+=======
+>>>>>>> f3485fc193221681fed3164f74fbbba02533e639
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

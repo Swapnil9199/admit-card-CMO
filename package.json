@@ -23,7 +23,10 @@
     "jspdf": "^2.5.2",
     "jsqr": "^1.4.0",
     "lucide-react": "^0.475.0",
+<<<<<<< HEAD
     "mongoose": "^9.9.4",
+=======
+>>>>>>> f3485fc193221681fed3164f74fbbba02533e639
     "nodemailer": "^6.10.0",
     "papaparse": "^5.5.2",
     "qrcode.react": "^4.2.0",

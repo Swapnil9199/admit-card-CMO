@@ -39,4 +39,74 @@ export const DEFAULT_RULES_MARATHI = [
 
 export const DEFAULT_PROHIBITED_ITEMS = "उमेदवारांनी परीक्षा कक्षेत प्रवेश केल्यावर आपले इलेक्ट्रॉनिक उपकरणे उदा. मोबाईल आणि हेडफोन्स बंद करून ठेवावेत. उमेदवारांना केवळ काळ्या शाईचे बॉल पेन आणि पाण्याची बॉटल परीक्षा कक्षात घेऊन जाण्याची परवानगी देण्यात आली आहे.";
 
+<<<<<<< HEAD
 export const INITIAL_CANDIDATES = [];
+=======
+export const INITIAL_CANDIDATES = [
+  {
+    id: "CM-2026-001",
+    uniqueCode: "CM-MPSC-8849102",
+    name: "Rushikesh Pawar",
+    phone: "7499696080",
+    email: "rushikesh.pawar@example.com",
+    examTitle: "MPSC Combine Group C Examination 2026 (संयुक्त गट क - पूर्व परीक्षा 2026)",
+    seatNo: "9696080",
+    examCentre: "Biology building ,S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
+    photoUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&h=240&fit=crop&crop=faces",
+    attendanceStatus: "Present",
+    verifiedAt: "2026-08-24 10:45 AM"
+  },
+  {
+    id: "CM-2026-002",
+    uniqueCode: "CM-MPSC-7938201",
+    name: "Priyanka Jadhav",
+    phone: "9823411290",
+    email: "priyanka.jadhav@example.com",
+    examTitle: "MPSC Combine Group C Examination 2026 (संयुक्त गट क - पूर्व परीक्षा 2026)",
+    seatNo: "3411290",
+    examCentre: "Biology building ,S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
+    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=240&fit=crop&crop=faces",
+    attendanceStatus: "Not Marked",
+    verifiedAt: null
+  },
+  {
+    id: "CM-2026-003",
+    uniqueCode: "CM-MPSC-4582910",
+    name: "Swapnil Shinde",
+    phone: "9158347712",
+    email: "swapnil.shinde@example.com",
+    examTitle: "MPSC Combine Group C Examination 2026 (संयुक्त गट क - पूर्व परीक्षा 2026)",
+    seatNo: "8347712",
+    examCentre: "Biology building ,S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
+    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=240&fit=crop&crop=faces",
+    attendanceStatus: "Present",
+    verifiedAt: "2026-08-24 10:52 AM"
+  },
+  {
+    id: "CM-2026-004",
+    uniqueCode: "CM-MPSC-9102834",
+    name: "Snehal Deshmukh",
+    phone: "9421098877",
+    email: "snehal.deshmukh@example.com",
+    examTitle: "MPSC Combine Group C Examination 2026 (संयुक्त गट क - पूर्व परीक्षा 2026)",
+    seatNo: "1098877",
+    examCentre: "Biology building ,S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
+    photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=240&fit=crop&crop=faces",
+    attendanceStatus: "Not Marked",
+    verifiedAt: null
+  },
+  {
+    id: "CM-2026-005",
+    uniqueCode: "CM-MPSC-3920194",
+    name: "Akash Gaikwad",
+    phone: "9766543210",
+    email: "akash.gaikwad@example.com",
+    examTitle: "MPSC Combine Group C Examination 2026 (संयुक्त गट क - पूर्व परीक्षा 2026)",
+    seatNo: "6543210",
+    examCentre: "Biology building ,S.P. College (Sir Parashurambhau College), Tilak Road, Pune",
+    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=240&fit=crop&crop=faces",
+    attendanceStatus: "Not Marked",
+    verifiedAt: null
+  }
+];
+>>>>>>> f3485fc193221681fed3164f74fbbba02533e639
