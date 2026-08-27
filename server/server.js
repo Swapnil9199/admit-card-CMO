@@ -150,8 +150,15 @@ async function createTransporter(customConfig = null) {
   }
 }
 
+function isDbConnected() {
+  return mongoose.connection && mongoose.connection.readyState === 1;
+}
+
 // GET all marked attendance records from MongoDB
 app.get('/api/attendance', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   try {
     const logs = await Attendance.find({});
     console.log(`[MongoDB] Loaded ${logs.length} attendance records from database.`);
@@ -164,6 +171,9 @@ app.get('/api/attendance', async (req, res) => {
 
 // POST save or update attendance status in MongoDB
 app.post('/api/attendance', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   const { candidateId, name, seatNo, attendanceStatus, verifiedAt } = req.body;
 
   if (!candidateId || !name || !seatNo) {
@@ -195,6 +205,9 @@ app.post('/api/attendance', async (req, res) => {
 
 // POST reset all attendance records in MongoDB
 app.post('/api/attendance/reset', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   try {
     const result = await Attendance.deleteMany({});
     console.log(`[MongoDB] Reset database: Deleted all ${result.deletedCount} attendance records.`);
@@ -209,6 +222,9 @@ app.post('/api/attendance/reset', async (req, res) => {
 
 // GET all candidates from MongoDB
 app.get('/api/candidates', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   try {
     const candidates = await Candidate.find({}).sort({ createdAt: 1 });
     console.log(`[MongoDB] Loaded ${candidates.length} candidates from database.`);
@@ -221,6 +237,9 @@ app.get('/api/candidates', async (req, res) => {
 
 // POST bulk upsert candidates — deduplicates on uniqueCode (safe to import same file multiple times)
 app.post('/api/candidates/bulk', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   const { candidates } = req.body;
 
   if (!Array.isArray(candidates) || candidates.length === 0) {
