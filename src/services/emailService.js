@@ -2,6 +2,27 @@
  * Client service to communicate with backend Email & SMTP endpoints
  */
 
+async function safeParseResponse(response, defaultErrorMessage) {
+  const text = await response.text();
+  if (!text) {
+    if (!response.ok) {
+      return {
+        success: false,
+        message: `Backend server error (${response.status} ${response.statusText}). Please verify the backend server is running on port 5001.`
+      };
+    }
+    return { success: true };
+  }
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return {
+      success: false,
+      message: `Server returned non-JSON response (${response.status}): ${text.slice(0, 150)}...`
+    };
+  }
+}
+
 // Send individual admit card PDF
 export async function sendAdmitCardEmail({
   recipientEmail,
@@ -29,19 +50,12 @@ export async function sendAdmitCardEmail({
       })
     });
 
-    const data = await response.json().catch(() => null);
-    if (!data) {
-      return {
-        success: false,
-        message: `Server returned status ${response.status}. Please check SMTP configuration.`
-      };
-    }
-    return data;
+    return await safeParseResponse(response, "Failed to send admit card email.");
   } catch (error) {
     console.error("Email service network error:", error);
     return {
       success: false,
-      message: "Admit card generated successfully, but we could not send it to the email address. Please try again.",
+      message: "Admit card generated successfully, but we could not send it to the email address. Please check your backend connection.",
       error: error.message || "Network error while sending email."
     };
   }
@@ -51,8 +65,7 @@ export async function sendAdmitCardEmail({
 export async function getSmtpConfig() {
   try {
     const response = await fetch('/api/get-smtp');
-    const data = await response.json().catch(() => null);
-    return data || { success: false, error: 'Failed to read SMTP config from server' };
+    return await safeParseResponse(response, "Failed to fetch SMTP configuration.");
   } catch (error) {
     console.error("Error fetching SMTP config:", error);
     return { success: false, error: error.message };
@@ -69,8 +82,7 @@ export async function saveSmtpConfig(config) {
       },
       body: JSON.stringify(config)
     });
-    const data = await response.json().catch(() => null);
-    return data || { success: false, message: `Server error (${response.status}) saving SMTP settings` };
+    return await safeParseResponse(response, "Failed to save SMTP configuration.");
   } catch (error) {
     console.error("Error saving SMTP config:", error);
     return { success: false, message: error.message };
@@ -87,8 +99,7 @@ export async function testSmtpConnection(config) {
       },
       body: JSON.stringify(config)
     });
-    const data = await response.json().catch(() => null);
-    return data || { success: false, message: `Server error (${response.status}) testing SMTP connection` };
+    return await safeParseResponse(response, "Failed to test SMTP connection.");
   } catch (error) {
     console.error("Error testing SMTP connection:", error);
     return { success: false, message: error.message };
