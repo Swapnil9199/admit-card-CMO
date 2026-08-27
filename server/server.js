@@ -60,6 +60,8 @@ const templateSchema = new mongoose.Schema({
 
 const TemplateConfig = mongoose.model('TemplateConfig', templateSchema);
 const TEMPLATE_CONFIG_FILE = path.join(__dirname, 'template_config.json');
+
+const app = express();
 const PORT = process.env.PORT || 5001;
 const CONFIG_FILE = path.join(__dirname, 'smtp_config.json');
 
