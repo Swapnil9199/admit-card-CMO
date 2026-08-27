@@ -283,7 +283,23 @@ app.delete('/api/candidates', async (req, res) => {
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  const mongoStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  
+  const stateVal = mongoose.connection.readyState;
+  
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    database: {
+      status: mongoStates[stateVal] || 'unknown',
+      connected: stateVal === 1
+    }
+  });
 });
 
 
