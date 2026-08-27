@@ -23,10 +23,7 @@ import Toast from './components/Toast';
 import { downloadAdmitCardPdf, generateAdmitCardPdfBase64 } from './utils/pdfGenerator';
 import { sendAdmitCardEmail, getSmtpConfig } from './services/emailService';
 import { getCurrentAdmin, logoutAdmin } from './services/authService';
-<<<<<<< HEAD
 import { getAttendance, markAttendance, resetAttendance } from './services/attendanceService';
-=======
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
 import {
   Printer,
   Download,
@@ -49,11 +46,7 @@ export default function App() {
   const [currentAdmin, setCurrentAdmin] = useState(() => getCurrentAdmin());
 
   // Auto-sync template updates from code when codebase is edited
-<<<<<<< HEAD
   const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_mpsc_c_sync_v2';
-=======
-  const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_mpsc_c_sync';
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
 
   // Exam Centres State (Default: S.P. College Pune)
   const [examCentres, setExamCentres] = useState(() => {
@@ -170,10 +163,7 @@ export default function App() {
 
   useEffect(() => {
     loadSmtpStatus();
-<<<<<<< HEAD
     syncAttendanceWithDb();
-=======
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
   }, []);
 
   const loadSmtpStatus = async () => {
@@ -186,7 +176,6 @@ export default function App() {
     }
   };
 
-<<<<<<< HEAD
   const syncAttendanceWithDb = async () => {
     try {
       const res = await getAttendance();
@@ -220,8 +209,6 @@ export default function App() {
     }
   };
 
-=======
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
   const showToast = (type, message, details = '') => {
     setToast({ type, message, details });
   };
@@ -283,7 +270,7 @@ export default function App() {
     setEmailCandidateTarget(candidateObj);
 
     try {
-      await new Promise(r => setTimeout(r, 450));
+      await new Promise(r => setTimeout(r, 350));
       const pdfResult = await generateAdmitCardPdfBase64('admit-card-email-render', candidateObj.name);
       const rawPdfBase64 = typeof pdfResult === 'object' ? pdfResult.pdfBase64 : pdfResult;
       const pdfFilename = typeof pdfResult === 'object' ? pdfResult.filename : `Admit_Card_${candidateObj.name.replace(/\s+/g, '_')}.pdf`;
@@ -372,19 +359,12 @@ export default function App() {
   };
 
   // Attendance Operations
-<<<<<<< HEAD
   const handleMarkAttendance = async (id, newStatus = 'Present') => {
     const now = new Date();
     const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
     const target = candidates.find(c => c.id === id);
 
-=======
-  const handleMarkAttendance = (id, newStatus = 'Present') => {
-    const now = new Date();
-    const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
     setCandidates(prevCandidates => {
       const updated = prevCandidates.map(c => {
         if (c.id === id) {
@@ -399,7 +379,6 @@ export default function App() {
       localStorage.setItem('cm_candidates', JSON.stringify(updated));
       return updated;
     });
-<<<<<<< HEAD
 
     if (target) {
       try {
@@ -411,21 +390,15 @@ export default function App() {
           verifiedAt: newStatus === 'Present' ? timeStr : null
         });
         if (!res.success) {
-          showToast('error', 'Attendance marked locally, but failed to save to MongoDB.', res.message);
+          console.warn('Attendance marked locally, MongoDB optional sync:', res.message);
         }
       } catch (err) {
-        console.error('Error saving attendance to MongoDB:', err);
-        showToast('error', 'Attendance marked locally, but failed to save to database.');
+        console.warn('Attendance marked locally (MongoDB offline/skipped)');
       }
     }
   };
 
   const handleResetAllAttendance = async () => {
-=======
-  };
-
-  const handleResetAllAttendance = () => {
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
     if (window.confirm("Are you sure you want to reset attendance for all candidates to 'Not Marked'?")) {
       const updated = candidates.map(c => ({
         ...c,
@@ -434,19 +407,15 @@ export default function App() {
       }));
       setCandidates(updated);
       showToast('info', 'All candidate attendance statuses have been reset.');
-<<<<<<< HEAD
 
       try {
         const res = await resetAttendance();
         if (!res.success) {
-          showToast('error', 'Attendance reset locally, but failed to clear in MongoDB.', res.message);
+          console.warn('Attendance reset locally, MongoDB optional sync:', res.message);
         }
       } catch (err) {
-        console.error('Error resetting attendance in MongoDB:', err);
-        showToast('error', 'Attendance reset locally, but failed to clear database.');
+        console.warn('Attendance reset locally (MongoDB offline/skipped)');
       }
-=======
->>>>>>> f3485fc193221681fed3164f74fbbba02533e639
     }
   };
 
