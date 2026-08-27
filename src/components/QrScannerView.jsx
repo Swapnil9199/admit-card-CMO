@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { QrCode, CheckCircle2, XCircle, Search, User, Phone, Mail, Hash, MapPin, Calendar, Clock, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -30,7 +30,9 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
   const [scannedResult, setScannedResult] = useState(null);
   const [scanStatus, setScanStatus] = useState(null); // 'SUCCESS', 'NOT_FOUND', 'ALREADY_PRESENT'
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
   const scannerRef = useRef(null);
+  const activePromiseRef = useRef(null);
   const celebratedIdsRef = useRef(new Set());
   const lastProcessedRef = useRef({ code: null, time: 0 });
 
@@ -46,21 +48,21 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
   }, [onMarkAttendance]);
 
   useEffect(() => {
-    let html5QrcodeScanner = null;
+    let html5Qrcode = null;
 
     if (isCameraActive) {
+      setCameraError(null);
       try {
-        html5QrcodeScanner = new Html5QrcodeScanner(
-          "qr-reader",
+        html5Qrcode = new Html5Qrcode("qr-reader");
+        scannerRef.current = html5Qrcode;
+
+        const startPromise = html5Qrcode.start(
+          { facingMode: "environment" },
           {
             fps: 15,
             qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0
           },
-          false
-        );
-
-        html5QrcodeScanner.render(
           (decodedText) => {
             handleDecodedText(decodedText);
           },
@@ -68,20 +70,54 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
             // normal frame scan error ignored
           }
         );
-        scannerRef.current = html5QrcodeScanner;
+
+        activePromiseRef.current = startPromise;
+
+        startPromise.catch(err => {
+          console.error("Camera start error:", err);
+          let msg = err;
+          if (err instanceof Error) msg = err.message;
+          if (String(msg).includes("NotReadableError") || String(msg).includes("Device in use")) {
+            setCameraError("Camera is currently in use by another application or browser tab. Please close any other app using the camera (Zoom, Teams, etc.) and try again.");
+          } else if (String(msg).includes("NotAllowedError") || String(msg).includes("Permission denied")) {
+            setCameraError("Camera permission denied. Please grant camera access permissions in your browser settings and try again.");
+          } else {
+            setCameraError(String(msg));
+          }
+        });
       } catch (e) {
         console.error("Scanner init error:", e);
+        setCameraError(e.message || String(e));
       }
     }
 
     return () => {
       if (scannerRef.current) {
-        try {
-          scannerRef.current.clear();
-        } catch (err) {
-          console.error("Error clearing scanner", err);
-        }
+        const scanner = scannerRef.current;
+        const startPromise = activePromiseRef.current;
+        
         scannerRef.current = null;
+        activePromiseRef.current = null;
+
+        const performStop = () => {
+          try {
+            if (scanner.isScanning) {
+              scanner.stop().catch(err => {
+                console.error("Failed to stop camera:", err);
+              });
+            }
+          } catch (e) {
+            console.error("Error stopping scanner instance:", e);
+          }
+        };
+
+        if (startPromise) {
+          startPromise.then(performStop).catch(() => {
+            // Start failed, no need to stop
+          });
+        } else {
+          performStop();
+        }
       }
     };
   }, [isCameraActive]);
@@ -223,11 +259,36 @@ export default function QrScannerView({ candidates = [], onMarkAttendance }) {
           </div>
 
           {/* Camera View Box */}
-          {isCameraActive ? (
-            <div className="bg-slate-950 rounded-2xl border-2 border-blue-500/40 p-3 overflow-hidden shadow-inner">
+          <div className={isCameraActive ? "block" : "hidden"}>
+            <div className="bg-slate-950 rounded-2xl border-2 border-blue-500/40 p-3 overflow-hidden shadow-inner relative min-h-[300px] flex flex-col items-center justify-center">
+              {cameraError && (
+                <div className="absolute inset-0 bg-slate-950/95 z-20 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
+                    <XCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-rose-300">Camera Connection Failed</h4>
+                    <p className="text-xs text-slate-400 max-w-xs mt-1 leading-relaxed">
+                      {cameraError}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCameraActive(false);
+                      setTimeout(() => setIsCameraActive(true), 250);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-750 transition"
+                  >
+                    Retry Connection
+                  </button>
+                </div>
+              )}
               <div id="qr-reader" className="w-full text-white rounded-xl overflow-hidden" />
             </div>
-          ) : (
+          </div>
+
+          {!isCameraActive && (
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-3">
                 <QrCode className="w-8 h-8" />
