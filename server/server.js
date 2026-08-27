@@ -200,7 +200,7 @@ app.post('/api/test-smtp', async (req, res) => {
     if (error.message?.includes('535') || error.message?.includes('BadCredentials') || error.message?.includes('Username and Password not accepted')) {
       userFriendlyMsg = 'Google authentication rejected: Google requires a 16-character App Password generated at myaccount.google.com/apppasswords rather than your normal password. Also ensure your sender Gmail matches the Google account where the App Password was created.';
     }
-    res.status(400).json({
+    res.status(200).json({
       success: false,
       message: `SMTP connection failed: ${userFriendlyMsg}`
     });
