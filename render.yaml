@@ -12,3 +12,5 @@ services:
         value: Combine Mentor Official
       - key: ADMIN_EMAIL
         value: admin@combinementor.in
+      - key: MONGO_URI
+        sync: false
