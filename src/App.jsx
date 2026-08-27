@@ -25,6 +25,7 @@ import { sendAdmitCardEmail, getSmtpConfig } from './services/emailService';
 import { getCurrentAdmin, logoutAdmin } from './services/authService';
 import { getAttendance, markAttendance, resetAttendance } from './services/attendanceService';
 import { getCandidates, bulkUpsertCandidates, deleteCandidate, deleteAllCandidates } from './services/candidateService';
+import { getTemplateConfig, saveTemplateConfig } from './services/templateService';
 import {
   Printer,
   Download,
@@ -162,10 +163,40 @@ export default function App() {
     localStorage.setItem('cm_exam_centres', JSON.stringify(examCentres));
   }, [examCentres]);
 
+  // Live Multi-Device Real-Time Sync (Runs continuously across all devices)
   useEffect(() => {
+    if (!currentAdmin) return;
+
     loadSmtpStatus();
-    syncCandidatesWithDb();
-  }, []);
+    syncCandidatesWithDb(false);
+    syncTemplateFromBackend(false);
+
+    // 1. Periodic background polling every 5 seconds for cross-device updates
+    const interval = setInterval(() => {
+      syncCandidatesWithDb(true);
+      syncTemplateFromBackend(true);
+    }, 5000);
+
+    // 2. Immediate real-time sync when switching back to this browser tab
+    const handleFocus = () => {
+      syncCandidatesWithDb(true);
+      syncTemplateFromBackend(true);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [currentAdmin]);
 
   const loadSmtpStatus = async () => {
     const res = await getSmtpConfig();
@@ -178,53 +209,82 @@ export default function App() {
   };
 
   /**
-   * Boot-time sync: load candidates from MongoDB first, then overlay attendance.
-   * Falls back to localStorage/defaults if MongoDB is offline.
+   * Multi-Device Template Sync: load template settings from backend.
    */
-  const syncCandidatesWithDb = async () => {
+  const syncTemplateFromBackend = async (isSilent = false) => {
+    try {
+      const res = await getTemplateConfig();
+      if (res.success && res.config) {
+        const { instituteInfo: inst, timetable: tt, rules: rl, prohibitedItems: prob, examCentres: centres } = res.config;
+        if (inst && Object.keys(inst).length > 0) {
+          setInstituteInfo(prev => ({ ...prev, ...inst }));
+        }
+        if (Array.isArray(tt) && tt.length > 0) {
+          setTimetable(tt);
+        }
+        if (Array.isArray(rl) && rl.length > 0) {
+          setRules(rl);
+        }
+        if (prob) {
+          setProhibitedItems(prob);
+        }
+        if (Array.isArray(centres) && centres.length > 0) {
+          setExamCentres(centres);
+        }
+      }
+    } catch (err) {
+      if (!isSilent) console.warn('Could not load template config from backend:', err);
+    }
+  };
+
+  /**
+   * Multi-Device Candidate & Attendance Sync: load candidates from MongoDB, then overlay attendance.
+   */
+  const syncCandidatesWithDb = async (isSilent = false) => {
     try {
       // 1. Load all persisted candidates from MongoDB
       const candidateRes = await getCandidates();
-      if (candidateRes.success && Array.isArray(candidateRes.candidates) && candidateRes.candidates.length > 0) {
+      if (candidateRes.success && Array.isArray(candidateRes.candidates)) {
         // Strip internal MongoDB fields (_id, __v) before storing in state
         const dbCandidates = candidateRes.candidates.map(({ _id, __v, createdAt, updatedAt, ...c }) => c);
+        
+        // 2. Overlay attendance status from the attendance collection
+        try {
+          const res = await getAttendance();
+          if (res.success && res.logs) {
+            const dbLogsMap = {};
+            res.logs.forEach(log => {
+              dbLogsMap[log.candidateId] = {
+                status: log.attendanceStatus,
+                verifiedAt: log.verifiedAt
+              };
+            });
+
+            const merged = dbCandidates.map(c => {
+              const dbLog = dbLogsMap[c.id];
+              if (dbLog) {
+                return {
+                  ...c,
+                  attendanceStatus: dbLog.status,
+                  verifiedAt: dbLog.verifiedAt
+                };
+              }
+              return c;
+            });
+            
+            setCandidates(merged);
+            localStorage.setItem('cm_candidates', JSON.stringify(merged));
+            return;
+          }
+        } catch (attErr) {
+          if (!isSilent) console.error('Failed to sync attendance logs from MongoDB:', attErr);
+        }
+
         setCandidates(dbCandidates);
         localStorage.setItem('cm_candidates', JSON.stringify(dbCandidates));
       }
     } catch (err) {
-      console.warn('Could not load candidates from MongoDB (offline?), using localStorage cache:', err);
-    }
-
-    // 2. Overlay attendance status from the attendance collection
-    try {
-      const res = await getAttendance();
-      if (res.success && res.logs) {
-        const dbLogsMap = {};
-        res.logs.forEach(log => {
-          dbLogsMap[log.candidateId] = {
-            status: log.attendanceStatus,
-            verifiedAt: log.verifiedAt
-          };
-        });
-
-        setCandidates(prevCandidates => {
-          const updated = prevCandidates.map(c => {
-            const dbLog = dbLogsMap[c.id];
-            if (dbLog) {
-              return {
-                ...c,
-                attendanceStatus: dbLog.status,
-                verifiedAt: dbLog.verifiedAt
-              };
-            }
-            return c;
-          });
-          localStorage.setItem('cm_candidates', JSON.stringify(updated));
-          return updated;
-        });
-      }
-    } catch (err) {
-      console.error('Failed to sync attendance logs from MongoDB:', err);
+      if (!isSilent) console.warn('Could not load candidates from MongoDB, using cache:', err);
     }
   };
 

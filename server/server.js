@@ -48,8 +48,18 @@ const candidateSchema = new mongoose.Schema({
 
 const Candidate = mongoose.model('Candidate', candidateSchema);
 
+// Define Template Schema for multi-device template configuration sync
+const templateSchema = new mongoose.Schema({
+  key: { type: String, default: 'global_template', unique: true },
+  instituteInfo: { type: Object, default: {} },
+  timetable: { type: Array, default: [] },
+  rules: { type: Array, default: [] },
+  prohibitedItems: { type: String, default: '' },
+  examCentres: { type: Array, default: [] }
+}, { timestamps: true });
 
-const app = express();
+const TemplateConfig = mongoose.model('TemplateConfig', templateSchema);
+const TEMPLATE_CONFIG_FILE = path.join(__dirname, 'template_config.json');
 const PORT = process.env.PORT || 5001;
 const CONFIG_FILE = path.join(__dirname, 'smtp_config.json');
 
@@ -279,6 +289,9 @@ app.post('/api/candidates/bulk', async (req, res) => {
 
 // DELETE a single candidate by their app id field
 app.delete('/api/candidates/:id', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   const { id } = req.params;
   try {
     const result = await Candidate.deleteOne({ id });
@@ -292,6 +305,9 @@ app.delete('/api/candidates/:id', async (req, res) => {
 
 // DELETE all candidates (full reset)
 app.delete('/api/candidates', async (req, res) => {
+  if (!isDbConnected()) {
+    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
+  }
   try {
     const result = await Candidate.deleteMany({});
     console.log(`[MongoDB] Deleted all ${result.deletedCount} candidates from database.`);
@@ -299,6 +315,49 @@ app.delete('/api/candidates', async (req, res) => {
   } catch (err) {
     console.error('Error deleting all candidates from MongoDB:', err);
     res.status(500).json({ success: false, message: 'Database error while deleting candidates.', error: err.message });
+  }
+});
+
+// ==================== TEMPLATE CONFIG ENDPOINTS ====================
+
+// GET template configuration (Multi-Device Sync)
+app.get('/api/template-config', async (req, res) => {
+  try {
+    if (isDbConnected()) {
+      const doc = await TemplateConfig.findOne({ key: 'global_template' });
+      if (doc) {
+        return res.json({ success: true, config: doc });
+      }
+    }
+    if (fs.existsSync(TEMPLATE_CONFIG_FILE)) {
+      const data = fs.readFileSync(TEMPLATE_CONFIG_FILE, 'utf8');
+      return res.json({ success: true, config: JSON.parse(data) });
+    }
+    res.json({ success: true, config: null });
+  } catch (err) {
+    console.error('Error loading template config:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST save template configuration (Multi-Device Sync)
+app.post('/api/template-config', async (req, res) => {
+  const { instituteInfo, timetable, rules, prohibitedItems, examCentres } = req.body;
+  try {
+    const configData = { instituteInfo, timetable, rules, prohibitedItems, examCentres };
+    fs.writeFileSync(TEMPLATE_CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
+
+    if (isDbConnected()) {
+      await TemplateConfig.findOneAndUpdate(
+        { key: 'global_template' },
+        { ...configData, key: 'global_template' },
+        { upsert: true, new: true }
+      );
+    }
+    res.json({ success: true, message: 'Template configuration synchronized across devices.' });
+  } catch (err) {
+    console.error('Error saving template config:', err);
+    res.status(500).json({ success: false, message: 'Failed to save template configuration.', error: err.message });
   }
 });
 

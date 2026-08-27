@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_INSTITUTE_INFO, DEFAULT_TIMETABLE, DEFAULT_RULES_MARATHI, DEFAULT_PROHIBITED_ITEMS } from '../data/defaultData';
 import { getSmtpConfig, saveSmtpConfig, testSmtpConnection } from '../services/emailService';
+import { saveTemplateConfig } from '../services/templateService';
 
 export default function TemplateCustomizer({
   instituteInfo,
@@ -105,6 +106,13 @@ export default function TemplateCustomizer({
     if (e) e.preventDefault();
     setInstituteInfo(draftInstitute);
     localStorage.setItem('cm_institute', JSON.stringify(draftInstitute));
+    saveTemplateConfig({
+      instituteInfo: draftInstitute,
+      timetable,
+      rules,
+      prohibitedItems,
+      examCentres
+    });
     triggerSaveNotification('Institute & Exam details saved to all Admit Cards!');
   };
 
@@ -124,6 +132,13 @@ export default function TemplateCustomizer({
       setInstituteInfo(draftInstitute);
       localStorage.setItem('cm_institute', JSON.stringify(draftInstitute));
       localStorage.setItem('cm_candidates', JSON.stringify(updated));
+      saveTemplateConfig({
+        instituteInfo: draftInstitute,
+        timetable,
+        rules,
+        prohibitedItems,
+        examCentres
+      });
       triggerSaveNotification(`Updated Exam Title & Centre for all ${candidates.length} candidates!`);
     }
   };
@@ -131,6 +146,13 @@ export default function TemplateCustomizer({
   const handleSaveTimetable = () => {
     setTimetable(draftTimetable);
     localStorage.setItem('cm_timetable', JSON.stringify(draftTimetable));
+    saveTemplateConfig({
+      instituteInfo,
+      timetable: draftTimetable,
+      rules,
+      prohibitedItems,
+      examCentres
+    });
     triggerSaveNotification('Timetable saved to all Admit Cards!');
   };
 
@@ -139,6 +161,13 @@ export default function TemplateCustomizer({
     setProhibitedItems(draftProhibited);
     localStorage.setItem('cm_rules', JSON.stringify(draftRules));
     localStorage.setItem('cm_prohibited', JSON.stringify(draftProhibited));
+    saveTemplateConfig({
+      instituteInfo,
+      timetable,
+      rules: draftRules,
+      prohibitedItems: draftProhibited,
+      examCentres
+    });
     triggerSaveNotification('Marathi Rules & Instructions saved to Page 2 of all Admit Cards!');
   };
 
@@ -151,6 +180,13 @@ export default function TemplateCustomizer({
     localStorage.setItem('cm_timetable', JSON.stringify(draftTimetable));
     localStorage.setItem('cm_rules', JSON.stringify(draftRules));
     localStorage.setItem('cm_prohibited', JSON.stringify(draftProhibited));
+    saveTemplateConfig({
+      instituteInfo: draftInstitute,
+      timetable: draftTimetable,
+      rules: draftRules,
+      prohibitedItems: draftProhibited,
+      examCentres
+    });
     triggerSaveNotification('All Template & Examination data saved successfully!');
   };
 
@@ -170,7 +206,13 @@ export default function TemplateCustomizer({
       localStorage.setItem('cm_timetable', JSON.stringify(DEFAULT_TIMETABLE));
       localStorage.setItem('cm_rules', JSON.stringify(DEFAULT_RULES_MARATHI));
       localStorage.setItem('cm_prohibited', JSON.stringify(DEFAULT_PROHIBITED_ITEMS));
-
+      saveTemplateConfig({
+        instituteInfo: DEFAULT_INSTITUTE_INFO,
+        timetable: DEFAULT_TIMETABLE,
+        rules: DEFAULT_RULES_MARATHI,
+        prohibitedItems: DEFAULT_PROHIBITED_ITEMS,
+        examCentres
+      });
       triggerSaveNotification('Template reset to default settings.');
     }
   };

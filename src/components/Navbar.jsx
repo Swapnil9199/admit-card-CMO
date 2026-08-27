@@ -75,6 +75,15 @@ export default function Navbar({
 
           {/* Quick Header Actions & Admin Profile */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Multi-Device Live Sync Badge */}
+            <div
+              className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 shrink-0 cursor-default"
+              title="Real-Time Multi-Device Sync Active (Auto-syncs attendance, candidates, and settings across all admin devices)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live Sync</span>
+            </div>
+
             {/* 1-Tap Send All Email */}
             <button
               onClick={onOpenBatchEmail}
