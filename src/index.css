@@ -1,0 +1,244 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    background-color: #090d16;
+    color: #f1f5f9;
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+  }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Print Specific Styles for Pixel-Perfect A4 Admit Cards */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 8mm 8mm 8mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-container {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .admit-card-page {
+    page-break-after: always;
+    break-after: page;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: 2px solid #000000 !important;
+  }
+
+  .admit-card-page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+}
+
+/* Glassmorphic Cards */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-input {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  border-color: #38bdf8;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+/* Hall ticket print border styling */
+.hallticket-border {
+  border: 2px solid #1e293b;
+}
+
+.hallticket-table th,
+.hallticket-table td {
+  border: 1px solid #334155;
+}
+
+/* ================= HTML5 QR Scanner Dark Theme & High Visibility ================= */
+#qr-reader {
+  border: none !important;
+  background: transparent !important;
+  color: #f8fafc !important;
+  font-family: inherit !important;
+}
+
+#qr-reader * {
+  color: #f8fafc !important;
+  box-sizing: border-box !important;
+}
+
+#qr-reader__dashboard {
+  padding: 12px 6px !important;
+  background: transparent !important;
+}
+
+#qr-reader__dashboard_section_csr,
+#qr-reader__dashboard_section_swaplink {
+  margin: 8px 0 !important;
+}
+
+#qr-reader span,
+#qr-reader label,
+#qr-reader div,
+#qr-reader p {
+  color: #f1f5f9 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+}
+
+/* Links (e.g. "Scan using camera directly", "Scan an Image File") */
+#qr-reader a {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+  font-size: 13px !important;
+  display: inline-block !important;
+  padding: 6px 12px !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-radius: 8px !important;
+  margin: 6px 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+#qr-reader a:hover {
+  color: #7dd3fc !important;
+  background: rgba(56, 189, 248, 0.22) !important;
+}
+
+/* Buttons inside QR Scanner */
+#qr-reader button {
+  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  padding: 9px 18px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  margin: 8px 4px !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+#qr-reader button:hover {
+  background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Select Camera Dropdown */
+#qr-reader select {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  outline: none !important;
+  margin: 6px 0 !important;
+}
+
+#qr-reader select:focus {
+  border-color: #38bdf8 !important;
+}
+
+/* File Drag & Drop Region */
+#qr-reader__dashboard_section_fsr,
+#qr-reader div[style*="border: 2px dashed"],
+#qr-reader div[style*="border: 1px dashed"] {
+  border: 2px dashed #38bdf8 !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-radius: 16px !important;
+  padding: 20px 14px !important;
+  margin: 12px 0 !important;
+}
+
+#qr-reader__scan_region {
+  background: #000000 !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
