@@ -235,7 +235,7 @@ export default function App() {
     setEmailCandidateTarget(candidateObj);
 
     try {
-      await new Promise(r => setTimeout(r, 350));
+      await new Promise(r => setTimeout(r, 450));
       const pdfResult = await generateAdmitCardPdfBase64('admit-card-email-render', candidateObj.name);
       const rawPdfBase64 = typeof pdfResult === 'object' ? pdfResult.pdfBase64 : pdfResult;
       const pdfFilename = typeof pdfResult === 'object' ? pdfResult.filename : `Admit_Card_${candidateObj.name.replace(/\s+/g, '_')}.pdf`;
