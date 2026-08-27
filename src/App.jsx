@@ -46,7 +46,7 @@ export default function App() {
   const [currentAdmin, setCurrentAdmin] = useState(() => getCurrentAdmin());
 
   // Auto-sync template updates from code when codebase is edited
-  const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_mpsc_c_sync_v2';
+  const CURRENT_TEMPLATE_VER = 'cm_tpl_v2026_clean_candidates';
 
   // Exam Centres State (Default: S.P. College Pune)
   const [examCentres, setExamCentres] = useState(() => {
@@ -472,6 +472,35 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* ================= TAB 1: ADMIT CARD LIVE PREVIEW ================= */}
         {activeTab === 'PREVIEW' && (
+          candidates.length === 0 ? (
+            <div className="p-12 text-center rounded-3xl glass-panel border border-slate-800 space-y-4 my-6">
+              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/20 shadow-lg">
+                <Users className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white">No Candidates Found</h3>
+              <p className="text-sm text-slate-400 max-w-md mx-auto">
+                No candidates are currently registered. Add a candidate manually or bulk import candidates via CSV / Excel to preview and generate admit cards.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setEditingCandidate(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition flex items-center gap-2"
+                >
+                  <span>+ Add Candidate</span>
+                </button>
+                <button
+                  onClick={() => setIsBulkImportOpen(true)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm border border-slate-700 transition flex items-center gap-2"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span>Bulk Import (CSV / Excel)</span>
+                </button>
+              </div>
+            </div>
+          ) : (
           <div className="space-y-4">
             {/* Candidate Selector Ribbon */}
             <div className="p-3.5 sm:p-4 rounded-3xl glass-panel space-y-3">
@@ -729,7 +758,8 @@ export default function App() {
               </div>
             </div>
           </div>
-        )}
+        )
+      )}
 
         {/* ================= TAB 2: CANDIDATES LIST ================= */}
         {activeTab === 'CANDIDATES' && (
@@ -801,16 +831,18 @@ export default function App() {
       </main>
 
       {/* Hidden Offscreen Admit Card Renderer for background PDF email generation */}
-      <div style={{ position: 'fixed', left: 0, top: 0, width: '800px', zIndex: -99999, pointerEvents: 'none', overflow: 'hidden' }} aria-hidden="true">
-        <AdmitCard
-          id="admit-card-email-render"
-          candidate={emailCandidateTarget || selectedCandidate}
-          instituteInfo={instituteInfo}
-          timetable={timetable}
-          rules={rules}
-          prohibitedItems={prohibitedItems}
-        />
-      </div>
+      {(emailCandidateTarget || selectedCandidate) && (
+        <div style={{ position: 'fixed', left: 0, top: 0, width: '800px', zIndex: -99999, pointerEvents: 'none', overflow: 'hidden' }} aria-hidden="true">
+          <AdmitCard
+            id="admit-card-email-render"
+            candidate={emailCandidateTarget || selectedCandidate}
+            instituteInfo={instituteInfo}
+            timetable={timetable}
+            rules={rules}
+            prohibitedItems={prohibitedItems}
+          />
+        </div>
+      )}
 
       {/* Candidate Add/Edit Modal */}
       <CandidateModal
