@@ -70,6 +70,12 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Helper to sanitize and clean passwords (stripping bullets, spaces, and Unicode dots)
+function cleanPassword(pass) {
+  if (!pass) return '';
+  return String(pass).replace(/[\s•\u2022\u25CF\u2023\u25E6\u2043\u2219\t\r\n]+/g, '').trim();
+}
+
 // Helper to load SMTP configuration
 function loadSmtpConfig() {
   try {
@@ -85,12 +91,12 @@ function loadSmtpConfig() {
   return {
     adminName: process.env.ADMIN_NAME || "Combine Mentor Official",
     adminEmail: process.env.ADMIN_EMAIL || process.env.SMTP_USER || "admin@combinementor.in",
-    host: process.env.SMTP_HOST || "",
-    port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587,
-    secure: process.env.SMTP_PORT === '465',
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 465,
+    secure: process.env.SMTP_PORT === '465' || !process.env.SMTP_PORT,
     user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
-    provider: "custom"
+    pass: cleanPassword(process.env.SMTP_PASS || ""),
+    provider: "gmail"
   };
 }
 
@@ -110,38 +116,42 @@ async function createTransporter(customConfig = null) {
   const config = customConfig || loadSmtpConfig();
 
   const user = String(config.user || config.adminEmail || '').trim();
-  const pass = String(config.pass || '').replace(/\s+/g, '').trim();
+  const pass = cleanPassword(config.pass);
   const host = String(config.host || '').trim();
   const isGmail = host.includes('gmail') || config.provider === 'gmail' || user.endsWith('@gmail.com');
 
   if ((host || isGmail) && user && pass) {
     if (isGmail) {
+      // Direct Gmail SSL connection on Port 465 for maximum reliability
       return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
         auth: {
           user: user,
           pass: pass
         },
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 10000,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
         tls: {
           rejectUnauthorized: false
         }
       });
     }
 
+    const port = config.port ? parseInt(config.port) : 587;
     return nodemailer.createTransport({
       host: host,
-      port: config.port ? parseInt(config.port) : 587,
-      secure: config.secure || parseInt(config.port) === 465,
+      port: port,
+      secure: Boolean(config.secure || port === 465),
       auth: {
         user: user,
         pass: pass
       },
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 10000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       tls: {
         rejectUnauthorized: false
       }
@@ -519,18 +529,21 @@ app.post('/api/save-smtp', (req, res) => {
   const newConfig = req.body;
   const currentConfig = loadSmtpConfig();
 
-  // If password was masked and unchanged, retain existing password
-  const passToSave = newConfig.pass === '••••••••' ? currentConfig.pass : newConfig.pass;
+  // If password was masked or empty, retain existing saved password
+  let passToSave = cleanPassword(newConfig.pass);
+  if (!passToSave || newConfig.pass === '••••••••' || newConfig.pass?.includes('•••')) {
+    passToSave = currentConfig.pass;
+  }
 
   const configToSave = {
     adminName: newConfig.adminName || "Combine Mentor Official",
     adminEmail: newConfig.adminEmail || "",
-    host: newConfig.host || "",
-    port: parseInt(newConfig.port) || 587,
-    secure: Boolean(newConfig.secure || parseInt(newConfig.port) === 465),
-    user: newConfig.user || "",
+    host: newConfig.host || (newConfig.provider === 'gmail' ? 'smtp.gmail.com' : ""),
+    port: parseInt(newConfig.port) || (newConfig.provider === 'gmail' ? 465 : 587),
+    secure: Boolean(newConfig.secure || parseInt(newConfig.port) === 465 || newConfig.provider === 'gmail'),
+    user: (newConfig.user || newConfig.adminEmail || "").trim(),
     pass: passToSave || "",
-    provider: newConfig.provider || "custom"
+    provider: newConfig.provider || "gmail"
   };
 
   const saved = saveSmtpConfig(configToSave);
@@ -546,10 +559,18 @@ app.post('/api/test-smtp', async (req, res) => {
   try {
     const newConfig = req.body;
     const currentConfig = loadSmtpConfig();
-    const passToTest = newConfig.pass === '••••••••' ? currentConfig.pass : newConfig.pass;
+
+    let passToTest = cleanPassword(newConfig.pass);
+    if (!passToTest || newConfig.pass === '••••••••' || newConfig.pass?.includes('•••')) {
+      passToTest = currentConfig.pass;
+    }
 
     const configToTest = {
       ...newConfig,
+      user: (newConfig.user || newConfig.adminEmail || "").trim(),
+      host: newConfig.host || (newConfig.provider === 'gmail' ? 'smtp.gmail.com' : ""),
+      port: parseInt(newConfig.port) || (newConfig.provider === 'gmail' ? 465 : 587),
+      secure: Boolean(newConfig.secure || parseInt(newConfig.port) === 465 || newConfig.provider === 'gmail'),
       pass: passToTest
     };
 
@@ -563,7 +584,7 @@ app.post('/api/test-smtp', async (req, res) => {
     if (!configToTest.pass) {
       return res.status(400).json({
         success: false,
-        message: "Please enter your 16-character Google App Password."
+        message: "Please enter your 16-character Google App Password (e.g. abcd efgh ijkl mnop)."
       });
     }
 
@@ -575,7 +596,7 @@ app.post('/api/test-smtp', async (req, res) => {
     // Fire verification confirmation email in the background
     if (configToTest.adminEmail) {
       transporter.sendMail({
-        from: `"${configToTest.adminName || 'Admin'}" <${configToTest.adminEmail}>`,
+        from: `"${configToTest.adminName || 'Combine Mentor Official'}" <${configToTest.adminEmail}>`,
         to: configToTest.adminEmail,
         subject: "SMTP Configuration Verified - Combine Mentor Official",
         html: `
@@ -596,7 +617,7 @@ app.post('/api/test-smtp', async (req, res) => {
     console.error("SMTP Test Error:", error);
     let userFriendlyMsg = error.message || 'Please check host, port, username, and password.';
     if (error.message?.includes('535') || error.message?.includes('BadCredentials') || error.message?.includes('Username and Password not accepted')) {
-      userFriendlyMsg = 'Google authentication rejected: Google requires a 16-character App Password generated at myaccount.google.com/apppasswords rather than your normal password. Also ensure your sender Gmail matches the Google account where the App Password was created.';
+      userFriendlyMsg = 'Google authentication rejected: Google requires a 16-character App Password generated at myaccount.google.com/apppasswords rather than your normal account password. Also ensure your sender Gmail matches the Google account where the App Password was created.';
     }
     res.status(400).json({
       success: false,
