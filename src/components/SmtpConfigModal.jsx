@@ -6,9 +6,9 @@ const PRESETS = {
   gmail: {
     name: 'Google Gmail',
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    help: 'Requires a Google App Password (not your regular password). Generate at myaccount.google.com/apppasswords'
+    port: 465,
+    secure: true,
+    help: 'Requires a 16-character Google App Password (not your regular login password). Generate at myaccount.google.com/apppasswords'
   },
   outlook: {
     name: 'Microsoft Outlook / Office 365',
@@ -50,11 +50,11 @@ const PRESETS = {
 export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
   const [formData, setFormData] = useState({
     adminName: 'Combine Mentor Official',
-    adminEmail: 'admin@combinementor.in',
+    adminEmail: '',
     provider: 'gmail',
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     user: '',
     pass: ''
   });
@@ -77,11 +77,11 @@ export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
       setFormData({
         adminName: res.config.adminName || 'Combine Mentor Official',
         adminEmail: res.config.adminEmail || '',
-        provider: res.config.provider || 'custom',
-        host: res.config.host || '',
-        port: res.config.port || 587,
-        secure: Boolean(res.config.secure),
-        user: res.config.user || '',
+        provider: res.config.provider || 'gmail',
+        host: res.config.host || 'smtp.gmail.com',
+        port: res.config.port || 465,
+        secure: res.config.secure !== undefined ? Boolean(res.config.secure) : true,
+        user: res.config.user || res.config.adminEmail || '',
         pass: res.config.pass || ''
       });
     }
@@ -107,10 +107,14 @@ export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
     setIsTesting(true);
     setTestResult(null);
     try {
-      const res = await testSmtpConnection(formData);
+      const payload = {
+        ...formData,
+        user: formData.user || formData.adminEmail
+      };
+      const res = await testSmtpConnection(payload);
       setTestResult({
         success: res.success,
-        message: res.message || (res.success ? "SMTP connection verified!" : "Connection failed.")
+        message: res.message || (res.success ? "SMTP connection verified successfully!" : "Connection failed.")
       });
     } catch (err) {
       setTestResult({
@@ -126,9 +130,13 @@ export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await saveSmtpConfig(formData);
+      const payload = {
+        ...formData,
+        user: formData.user || formData.adminEmail
+      };
+      const res = await saveSmtpConfig(payload);
       if (res.success) {
-        if (onSaveSuccess) onSaveSuccess(formData);
+        if (onSaveSuccess) onSaveSuccess(payload);
         onClose();
       } else {
         setTestResult({ success: false, message: res.message || "Failed to save configuration." });
@@ -223,14 +231,21 @@ export default function SmtpConfigModal({ isOpen, onClose, onSaveSuccess }) {
 
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">
-                  Admin Sender Email Address *
+                  Admin Sender Gmail Address *
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="e.g. admin@combinementor.in"
+                  placeholder="e.g. yourname@gmail.com"
                   value={formData.adminEmail}
-                  onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      adminEmail: val,
+                      user: (!prev.user || prev.user === prev.adminEmail) ? val : prev.user
+                    }));
+                  }}
                   className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono"
                 />
               </div>
