@@ -122,6 +122,9 @@ async function createTransporter(customConfig = null) {
           user: user,
           pass: pass
         },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
         tls: {
           rejectUnauthorized: false
         }
@@ -131,35 +134,24 @@ async function createTransporter(customConfig = null) {
     return nodemailer.createTransport({
       host: host,
       port: config.port ? parseInt(config.port) : 587,
-      secure: config.secure || config.port === 465,
+      secure: config.secure || parseInt(config.port) === 465,
       auth: {
         user: user,
         pass: pass
       },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000,
       tls: {
         rejectUnauthorized: false
       }
     });
   }
 
-  // Fallback to test Ethereal account if no SMTP provided
-  try {
-    const testAccount = await nodemailer.createTestAccount();
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
-      }
-    });
-  } catch (err) {
-    console.warn("Using JSON transport fallback", err);
-    return nodemailer.createTransport({
-      jsonTransport: true
-    });
-  }
+  // Fast JSON fallback if not configured
+  return nodemailer.createTransport({
+    jsonTransport: true
+  });
 }
 
 // Server-Sent Events (SSE) Client Pool for Instant Real-Time Multi-Device Sync
@@ -561,14 +553,28 @@ app.post('/api/test-smtp', async (req, res) => {
       pass: passToTest
     };
 
+    if (!configToTest.user && !configToTest.adminEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your Gmail address."
+      });
+    }
+
+    if (!configToTest.pass) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your 16-character Google App Password."
+      });
+    }
+
     const transporter = await createTransporter(configToTest);
     
-    // Verify connection configuration
+    // Fast socket verification (< 1 second)
     await transporter.verify();
 
-    // Optionally send a test email to admin
+    // Fire verification confirmation email in the background
     if (configToTest.adminEmail) {
-      await transporter.sendMail({
+      transporter.sendMail({
         from: `"${configToTest.adminName || 'Admin'}" <${configToTest.adminEmail}>`,
         to: configToTest.adminEmail,
         subject: "SMTP Configuration Verified - Combine Mentor Official",
@@ -579,7 +585,7 @@ app.post('/api/test-smtp', async (req, res) => {
             <p style="font-size: 12px; color: #64748b;">Timestamp: ${new Date().toLocaleString()}</p>
           </div>
         `
-      });
+      }).catch(e => console.warn("[Test Email Background Send Warning]:", e.message));
     }
 
     res.json({
