@@ -162,30 +162,113 @@ async function createTransporter(customConfig = null) {
   }
 }
 
+// Server-Sent Events (SSE) Client Pool for Instant Real-Time Multi-Device Sync
+const sseClients = new Set();
+
+function broadcastEvent(eventType, payload = {}) {
+  const message = `event: ${eventType}\ndata: ${JSON.stringify({ timestamp: Date.now(), ...payload })}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(message);
+    } catch (err) {
+      sseClients.delete(client);
+    }
+  }
+}
+
+// Fallback JSON Storage Paths
+const CANDIDATES_FILE = path.join(__dirname, 'candidates_data.json');
+const ATTENDANCE_FILE = path.join(__dirname, 'attendance_data.json');
+
+function loadCandidatesFile() {
+  try {
+    if (fs.existsSync(CANDIDATES_FILE)) {
+      return JSON.parse(fs.readFileSync(CANDIDATES_FILE, 'utf8'));
+    }
+  } catch (err) {
+    console.error("Error reading candidates_data.json:", err);
+  }
+  return [];
+}
+
+function saveCandidatesFile(candidates) {
+  try {
+    fs.writeFileSync(CANDIDATES_FILE, JSON.stringify(candidates, null, 2), 'utf8');
+  } catch (err) {
+    console.error("Error writing candidates_data.json:", err);
+  }
+}
+
+function loadAttendanceFile() {
+  try {
+    if (fs.existsSync(ATTENDANCE_FILE)) {
+      return JSON.parse(fs.readFileSync(ATTENDANCE_FILE, 'utf8'));
+    }
+  } catch (err) {
+    console.error("Error reading attendance_data.json:", err);
+  }
+  return [];
+}
+
+function saveAttendanceFile(logs) {
+  try {
+    fs.writeFileSync(ATTENDANCE_FILE, JSON.stringify(logs, null, 2), 'utf8');
+  } catch (err) {
+    console.error("Error writing attendance_data.json:", err);
+  }
+}
+
 function isDbConnected() {
   return mongoose.connection && mongoose.connection.readyState === 1;
 }
 
-// GET all marked attendance records from MongoDB
+// ==================== REAL-TIME SSE STREAM ====================
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  // Send initial connection event
+  res.write(`event: connected\ndata: ${JSON.stringify({ status: 'live', clients: sseClients.size + 1 })}\n\n`);
+  sseClients.add(res);
+
+  // Keep-alive heartbeat every 20 seconds
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': heartbeat\n\n');
+    } catch (e) {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+// ==================== ATTENDANCE ENDPOINTS ====================
+
+// GET all marked attendance records
 app.get('/api/attendance', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   try {
-    const logs = await Attendance.find({});
-    console.log(`[MongoDB] Loaded ${logs.length} attendance records from database.`);
-    res.json({ success: true, logs });
+    if (isDbConnected()) {
+      const logs = await Attendance.find({});
+      console.log(`[MongoDB] Loaded ${logs.length} attendance records from database.`);
+      return res.json({ success: true, logs });
+    }
+    const localLogs = loadAttendanceFile();
+    res.json({ success: true, logs: localLogs });
   } catch (err) {
-    console.error('Error fetching attendance from MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while fetching attendance.', error: err.message });
+    console.error('Error fetching attendance:', err);
+    res.status(500).json({ success: false, message: 'Error while fetching attendance.', error: err.message });
   }
 });
 
-// POST save or update attendance status in MongoDB
+// POST save or update attendance status
 app.post('/api/attendance', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   const { candidateId, name, seatNo, attendanceStatus, verifiedAt } = req.body;
 
   if (!candidateId || !name || !seatNo) {
@@ -193,65 +276,82 @@ app.post('/api/attendance', async (req, res) => {
   }
 
   try {
-    // If resetting to "Not Marked", we delete it from MongoDB to ONLY record active present/absent students
+    let localLogs = loadAttendanceFile();
     if (attendanceStatus === 'Not Marked') {
-      await Attendance.deleteOne({ candidateId });
-      console.log(`[MongoDB] Reset status for candidate: ${name} (Seat: ${seatNo}) -> Record deleted.`);
-      return res.json({ success: true, message: 'Attendance record cleared from database.' });
+      localLogs = localLogs.filter(l => l.candidateId !== candidateId);
+    } else {
+      const existingIdx = localLogs.findIndex(l => l.candidateId === candidateId);
+      const record = { candidateId, name, seatNo, attendanceStatus, verifiedAt };
+      if (existingIdx >= 0) {
+        localLogs[existingIdx] = record;
+      } else {
+        localLogs.push(record);
+      }
+    }
+    saveAttendanceFile(localLogs);
+
+    if (isDbConnected()) {
+      if (attendanceStatus === 'Not Marked') {
+        await Attendance.deleteOne({ candidateId });
+      } else {
+        await Attendance.findOneAndUpdate(
+          { candidateId },
+          { name, seatNo, attendanceStatus, verifiedAt },
+          { upsert: true, new: true }
+        );
+      }
     }
 
-    // Otherwise, upsert the present/absent state
-    const record = await Attendance.findOneAndUpdate(
-      { candidateId },
-      { name, seatNo, attendanceStatus, verifiedAt },
-      { upsert: true, new: true }
-    );
+    // Broadcast instant real-time event to all logged-in devices
+    broadcastEvent('ATTENDANCE_UPDATED', { candidateId, attendanceStatus, verifiedAt, name, seatNo });
 
-    console.log(`[MongoDB] Set candidate: ${name} (Seat: ${seatNo}) -> Status: ${attendanceStatus} | Verified At: ${verifiedAt || 'N/A'}`);
-    res.json({ success: true, record });
+    console.log(`[Sync] Updated candidate: ${name} (Seat: ${seatNo}) -> ${attendanceStatus}`);
+    res.json({ success: true, message: 'Attendance status saved and synchronized live.' });
   } catch (err) {
-    console.error('Error updating attendance in MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while saving attendance.', error: err.message });
+    console.error('Error updating attendance:', err);
+    res.status(500).json({ success: false, message: 'Error while saving attendance.', error: err.message });
   }
 });
 
-// POST reset all attendance records in MongoDB
+// POST reset all attendance records
 app.post('/api/attendance/reset', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   try {
-    const result = await Attendance.deleteMany({});
-    console.log(`[MongoDB] Reset database: Deleted all ${result.deletedCount} attendance records.`);
-    res.json({ success: true, message: 'All attendance records deleted from database successfully.' });
+    saveAttendanceFile([]);
+    if (isDbConnected()) {
+      await Attendance.deleteMany({});
+    }
+
+    // Broadcast instant real-time event
+    broadcastEvent('ATTENDANCE_RESET');
+
+    console.log(`[Sync] Reset all attendance records.`);
+    res.json({ success: true, message: 'All attendance records reset and synchronized live.' });
   } catch (err) {
-    console.error('Error resetting attendance in MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while resetting attendance.', error: err.message });
+    console.error('Error resetting attendance:', err);
+    res.status(500).json({ success: false, message: 'Error while resetting attendance.', error: err.message });
   }
 });
 
 // ==================== CANDIDATE ENDPOINTS ====================
 
-// GET all candidates from MongoDB
+// GET all candidates
 app.get('/api/candidates', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   try {
-    const candidates = await Candidate.find({}).sort({ createdAt: 1 });
-    console.log(`[MongoDB] Loaded ${candidates.length} candidates from database.`);
-    res.json({ success: true, candidates });
+    if (isDbConnected()) {
+      const candidates = await Candidate.find({}).sort({ createdAt: 1 });
+      console.log(`[MongoDB] Loaded ${candidates.length} candidates from database.`);
+      return res.json({ success: true, candidates });
+    }
+    const localCandidates = loadCandidatesFile();
+    res.json({ success: true, candidates: localCandidates });
   } catch (err) {
-    console.error('Error fetching candidates from MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while fetching candidates.', error: err.message });
+    console.error('Error fetching candidates:', err);
+    res.status(500).json({ success: false, message: 'Error while fetching candidates.', error: err.message });
   }
 });
 
-// POST bulk upsert candidates — deduplicates on uniqueCode (safe to import same file multiple times)
+// POST bulk upsert candidates — deduplicates on uniqueCode
 app.post('/api/candidates/bulk', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   const { candidates } = req.body;
 
   if (!Array.isArray(candidates) || candidates.length === 0) {
@@ -259,64 +359,86 @@ app.post('/api/candidates/bulk', async (req, res) => {
   }
 
   try {
-    const results = await Promise.all(
-      candidates.map(c =>
-        Candidate.findOneAndUpdate(
-          { uniqueCode: c.uniqueCode },  // Match key — unique per candidate
-          {
-            id: c.id,
-            uniqueCode: c.uniqueCode,
-            name: c.name,
-            phone: c.phone || '',
-            email: c.email || '',
-            examTitle: c.examTitle || '',
-            seatNo: c.seatNo || '',
-            examCentre: c.examCentre || '',
-            photoUrl: c.photoUrl || '',
-            attendanceStatus: c.attendanceStatus || 'Not Marked',
-            verifiedAt: c.verifiedAt || null
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        )
-      )
-    );
+    // Update local storage file
+    let existingList = loadCandidatesFile();
+    const map = new Map(existingList.map(c => [c.uniqueCode || c.id, c]));
+    candidates.forEach(c => {
+      const key = c.uniqueCode || c.id;
+      map.set(key, { ...map.get(key), ...c });
+    });
+    const updatedAll = Array.from(map.values());
+    saveCandidatesFile(updatedAll);
 
-    console.log(`[MongoDB] Bulk upserted ${results.length} candidates (deduplication applied on uniqueCode).`);
-    res.json({ success: true, upsertedCount: results.length, message: `${results.length} candidate(s) saved to database.` });
+    if (isDbConnected()) {
+      await Promise.all(
+        candidates.map(c =>
+          Candidate.findOneAndUpdate(
+            { uniqueCode: c.uniqueCode },
+            {
+              id: c.id,
+              uniqueCode: c.uniqueCode,
+              name: c.name,
+              phone: c.phone || '',
+              email: c.email || '',
+              examTitle: c.examTitle || '',
+              seatNo: c.seatNo || '',
+              examCentre: c.examCentre || '',
+              photoUrl: c.photoUrl || '',
+              attendanceStatus: c.attendanceStatus || 'Not Marked',
+              verifiedAt: c.verifiedAt || null
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          )
+        )
+      );
+    }
+
+    // Broadcast instant real-time event to all connected admin devices
+    broadcastEvent('CANDIDATES_UPDATED', { count: updatedAll.length });
+
+    console.log(`[Sync] Saved ${candidates.length} candidates. Broadcasted live to all devices.`);
+    res.json({ success: true, upsertedCount: candidates.length, message: `${candidates.length} candidate(s) saved and synchronized live.` });
   } catch (err) {
-    console.error('Error bulk upserting candidates in MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while saving candidates.', error: err.message });
+    console.error('Error bulk upserting candidates:', err);
+    res.status(500).json({ success: false, message: 'Error while saving candidates.', error: err.message });
   }
 });
 
 // DELETE a single candidate by their app id field
 app.delete('/api/candidates/:id', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   const { id } = req.params;
   try {
-    const result = await Candidate.deleteOne({ id });
-    console.log(`[MongoDB] Deleted candidate with id: ${id} (deletedCount: ${result.deletedCount})`);
-    res.json({ success: true, message: 'Candidate deleted from database.' });
+    let localList = loadCandidatesFile();
+    localList = localList.filter(c => c.id !== id);
+    saveCandidatesFile(localList);
+
+    if (isDbConnected()) {
+      await Candidate.deleteOne({ id });
+    }
+
+    broadcastEvent('CANDIDATES_UPDATED', { deletedId: id });
+    console.log(`[Sync] Deleted candidate: ${id}. Broadcasted live.`);
+    res.json({ success: true, message: 'Candidate deleted and synchronized live.' });
   } catch (err) {
-    console.error('Error deleting candidate from MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while deleting candidate.', error: err.message });
+    console.error('Error deleting candidate:', err);
+    res.status(500).json({ success: false, message: 'Error while deleting candidate.', error: err.message });
   }
 });
 
 // DELETE all candidates (full reset)
 app.delete('/api/candidates', async (req, res) => {
-  if (!isDbConnected()) {
-    return res.json({ success: false, offline: true, message: 'MongoDB not connected locally.' });
-  }
   try {
-    const result = await Candidate.deleteMany({});
-    console.log(`[MongoDB] Deleted all ${result.deletedCount} candidates from database.`);
-    res.json({ success: true, message: `All ${result.deletedCount} candidates deleted from database.` });
+    saveCandidatesFile([]);
+    if (isDbConnected()) {
+      await Candidate.deleteMany({});
+    }
+
+    broadcastEvent('CANDIDATES_UPDATED', { reset: true });
+    console.log(`[Sync] Deleted all candidates. Broadcasted live.`);
+    res.json({ success: true, message: 'All candidates deleted and synchronized live.' });
   } catch (err) {
-    console.error('Error deleting all candidates from MongoDB:', err);
-    res.status(500).json({ success: false, message: 'Database error while deleting candidates.', error: err.message });
+    console.error('Error deleting all candidates:', err);
+    res.status(500).json({ success: false, message: 'Error while deleting candidates.', error: err.message });
   }
 });
 
@@ -356,7 +478,9 @@ app.post('/api/template-config', async (req, res) => {
         { upsert: true, new: true }
       );
     }
-    res.json({ success: true, message: 'Template configuration synchronized across devices.' });
+
+    broadcastEvent('TEMPLATE_UPDATED', configData);
+    res.json({ success: true, message: 'Template configuration synchronized live across all devices.' });
   } catch (err) {
     console.error('Error saving template config:', err);
     res.status(500).json({ success: false, message: 'Failed to save template configuration.', error: err.message });

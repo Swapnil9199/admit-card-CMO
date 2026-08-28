@@ -163,7 +163,7 @@ export default function App() {
     localStorage.setItem('cm_exam_centres', JSON.stringify(examCentres));
   }, [examCentres]);
 
-  // Live Multi-Device Real-Time Sync (Runs continuously across all devices)
+  // Live Multi-Device Real-Time Sync (SSE Stream + Periodic Heartbeat + Focus Sync)
   useEffect(() => {
     if (!currentAdmin) return;
 
@@ -171,13 +171,82 @@ export default function App() {
     syncCandidatesWithDb(false);
     syncTemplateFromBackend(false);
 
-    // 1. Periodic background polling every 5 seconds for cross-device updates
+    // 1. Real-Time Server-Sent Events (SSE) stream for instant updates across devices
+    let eventSource = null;
+    try {
+      eventSource = new EventSource('/api/events');
+
+      eventSource.addEventListener('ATTENDANCE_UPDATED', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data && data.candidateId) {
+            setCandidates(prev => {
+              const updated = prev.map(c => {
+                if (c.id === data.candidateId) {
+                  return {
+                    ...c,
+                    attendanceStatus: data.attendanceStatus,
+                    verifiedAt: data.verifiedAt
+                  };
+                }
+                return c;
+              });
+              localStorage.setItem('cm_candidates', JSON.stringify(updated));
+              return updated;
+            });
+          } else {
+            syncCandidatesWithDb(true);
+          }
+        } catch (err) {
+          syncCandidatesWithDb(true);
+        }
+      });
+
+      eventSource.addEventListener('ATTENDANCE_RESET', () => {
+        setCandidates(prev => {
+          const updated = prev.map(c => ({
+            ...c,
+            attendanceStatus: 'Not Marked',
+            verifiedAt: null
+          }));
+          localStorage.setItem('cm_candidates', JSON.stringify(updated));
+          return updated;
+        });
+      });
+
+      eventSource.addEventListener('CANDIDATES_UPDATED', () => {
+        syncCandidatesWithDb(true);
+      });
+
+      eventSource.addEventListener('TEMPLATE_UPDATED', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data) {
+            if (data.instituteInfo) setInstituteInfo(data.instituteInfo);
+            if (data.timetable) setTimetable(data.timetable);
+            if (data.rules) setRules(data.rules);
+            if (data.prohibitedItems) setProhibitedItems(data.prohibitedItems);
+            if (data.examCentres) setExamCentres(data.examCentres);
+          }
+        } catch (err) {
+          syncTemplateFromBackend(true);
+        }
+      });
+
+      eventSource.onerror = () => {
+        // EventSource will automatically retry connection
+      };
+    } catch (err) {
+      console.warn("SSE not supported or connection error, relying on background polling:", err);
+    }
+
+    // 2. Periodic background polling every 5 seconds for cross-device updates
     const interval = setInterval(() => {
       syncCandidatesWithDb(true);
       syncTemplateFromBackend(true);
     }, 5000);
 
-    // 2. Immediate real-time sync when switching back to this browser tab
+    // 3. Immediate real-time sync when switching back to this browser tab
     const handleFocus = () => {
       syncCandidatesWithDb(true);
       syncTemplateFromBackend(true);
@@ -192,6 +261,7 @@ export default function App() {
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      if (eventSource) eventSource.close();
       clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
